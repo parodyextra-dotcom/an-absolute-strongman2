@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>절대강자 분할환전</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="분할환전">
+  <meta name="theme-color" content="#6366f1">
+  
+  <!-- App Icon - Generated dynamically -->
+  <link rel="icon" id="favicon" type="image/png" href="">
+  <link rel="apple-touch-icon" id="apple-icon" href="">
+  
+  <script>
+    // Generate app icon as PNG for better compatibility
+    function generateAppIcon(size) {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      
+      // Gradient background
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#6366f1');
+      gradient.addColorStop(0.5, '#9333ea');
+      gradient.addColorStop(1, '#ec4899');
+      
+      // Rounded rectangle
+      const radius = size * 0.2;
+      ctx.beginPath();
+      ctx.moveTo(radius, 0);
+      ctx.lineTo(size - radius, 0);
+      ctx.quadraticCurveTo(size, 0, size, radius);
+      ctx.lineTo(size, size - radius);
+      ctx.quadraticCurveTo(size, size, size - radius, size);
+      ctx.lineTo(radius, size);
+      ctx.quadraticCurveTo(0, size, 0, size - radius);
+      ctx.lineTo(0, radius);
+      ctx.quadraticCurveTo(0, 0, radius, 0);
+      ctx.closePath();
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      
+      // Crown emoji
+      ctx.font = `${size * 0.25}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.fillText('👑', size / 2, size * 0.32);
+      
+      // Dollar and Yen symbols
+      ctx.font = `bold ${size * 0.22}px Arial`;
+      ctx.fillStyle = '#fde68a';
+      ctx.fillText('$', size * 0.32, size * 0.6);
+      ctx.fillStyle = '#fca5a5';
+      ctx.fillText('¥', size * 0.68, size * 0.6);
+      
+      // Text
+      ctx.font = `bold ${size * 0.18}px Arial`;
+      ctx.fillStyle = 'white';
+      ctx.fillText('환전', size / 2, size * 0.85);
+      
+      return canvas.toDataURL('image/png');
+    }
+    
+    // Set icons when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      const icon192 = generateAppIcon(192);
+      const icon32 = generateAppIcon(32);
+      document.getElementById('favicon').href = icon32;
+      document.getElementById('apple-icon').href = icon192;
+    });
+  </script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+  <div id="app" class="p-3 pb-8 max-w-md mx-auto"></div>
+
+  <script>
+    // State
+    let state = {
+      activeTab: 'USD',
+      usdPhases: [],
+      jpyPhases: [],
+      expandedPhase: null,
+      usdRate: 1445,
+      jpyRate: 920,
+      isEditingRate: false,
+      tempRate: 1445,
+      usdNextId: 1,
+      jpyNextId: 1,
+      showStats: false,
+      statsPeriod: 'yearly',
+      statsStartDate: '',
+      statsEndDate: '',
+      isLoadingRate: false,
+      lastUpdated: null,
+      soldItemsVisible: 10,
+      autoSell: true,
+      initialBudget: 10000000
+    };
+
+    // Helpers
+    const getPhases = () => state.activeTab === 'USD' ? state.usdPhases : state.jpyPhases;
+    const setPhases = (phases) => {
+      if (state.activeTab === 'USD') state.usdPhases = phases;
+      else state.jpyPhases = phases;
+    };
+    const getCurrentRate = () => state.activeTab === 'USD' ? state.usdRate : state.jpyRate;
+    const setCurrentRate = (rate) => {
+      if (state.activeTab === 'USD') state.usdRate = rate;
+      else state.jpyRate = rate;
+    };
+    const getNextId = () => state.activeTab === 'USD' ? state.usdNextId : state.jpyNextId;
+    const setNextId = (id) => {
+      if (state.activeTab === 'USD') state.usdNextId = id;
+      else state.jpyNextId = id;
+    };
+
+    // Fetch exchange rate
+    async function fetchRate() {
+      state.isLoadingRate = true;
+      render();
+      try {
+        const res = await fetch('https://api.exchangerate-api.com/v4/latest/KRW');
+        const data = await res.json();
+        if (data.rates.USD && data.rates.JPY) {
+          state.usdRate = Math.round((1 / data.rates.USD) * 10) / 10;
+          // JPY는 100엔당 환율로 계산
+          state.jpyRate = Math.round((100 / data.rates.JPY) * 100) / 100;
+          state.lastUpdated = new Date();
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        state.isLoadingRate = false;
+        render();
+      }
+    }
+
+    // Auto sell check
+    function checkAutoSell() {
+      if (state.autoSell) {
+        const phases = getPhases();
+        const currentRate = getCurrentRate();
+        phases.forEach(p => {
+          if (p.completed && !p.sold && currentRate >= p.sellRate + 1) {
+            toggleSold(p.id);
+          }
+        });
+      }
+    }
+
+    // LocalStorage
+    function saveToStorage() {
+      const data = {
+        usdPhases: state.usdPhases,
+        jpyPhases: state.jpyPhases,
+        usdNextId: state.usdNextId,
+        jpyNextId: state.jpyNextId,
+        usdRate: state.usdRate,
+        jpyRate: state.jpyRate
+      };
+      localStorage.setItem('currencyPortfolio', JSON.stringify(data));
+    }
+
+    function loadFromStorage() {
+      const saved = localStorage.getItem('currencyPortfolio');
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          if (data.usdPhases) state.usdPhases = data.usdPhases;
+          if (data.jpyPhases) state.jpyPhases = data.jpyPhases;
+          if (data.usdNextId) state.usdNextId = data.usdNextId;
+          if (data.jpyNextId) state.jpyNextId = data.jpyNextId;
+          if (data.usdRate) state.usdRate = data.usdRate;
+          if (data.jpyRate) state.jpyRate = data.jpyRate;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    // Actions
+    function addPhase() {
+      const currentRate = getCurrentRate();
+      const nextId = getNextId();
+      const newPhase = {
+        id: nextId,
+        amount: 1000000,
+        buyRate: currentRate,
+        sellRate: currentRate + 5,
+        completed: false,
+        sold: false,
+        date: '',
+        sellDate: ''
+      };
+      setPhases([...getPhases(), newPhase]);
+      setNextId(nextId + 1);
+      state.expandedPhase = newPhase.id;
+      saveToStorage();
+      render();
+    }
+
+    function deletePhase(id) {
+      if (confirm('삭제하시겠습니까?')) {
+        setPhases(getPhases().filter(p => p.id !== id));
+        saveToStorage();
+        render();
+      }
+    }
+
+    function updatePhase(id, field, value) {
+      setPhases(getPhases().map(p => p.id === id ? { ...p, [field]: value } : p));
+      saveToStorage();
+      render();
+    }
+
+    function toggleComplete(id) {
+      setPhases(getPhases().map(p => p.id === id ? {
+        ...p,
+        completed: !p.completed,
+        date: !p.completed ? new Date().toISOString().split('T')[0] : p.date
+      } : p));
+      saveToStorage();
+      render();
+    }
+
+    function toggleSold(id) {
+      const phase = getPhases().find(p => p.id === id);
+      if (!phase.completed) {
+        alert('매수를 먼저 완료해주세요!');
+        return;
+      }
+      const currentRate = getCurrentRate();
+      setPhases(getPhases().map(p => p.id === id ? {
+        ...p,
+        sold: true,
+        sellDate: new Date().toISOString().split('T')[0],
+        sellRate: currentRate
+      } : p));
+      saveToStorage();
+      render();
+    }
+
+    function getGrade() {
+      const year = new Date().getFullYear();
+      const allSold = [...state.usdPhases, ...state.jpyPhases].filter(p =>
+        p.sold && p.sellDate && new Date(p.sellDate).getFullYear() === year
+      );
+      const totalInv = allSold.reduce((s, p) => s + p.amount, 0);
+      const totalProf = allSold.reduce((s, p) => s + ((p.amount / p.buyRate) * p.sellRate - p.amount), 0);
+      const rate = totalInv > 0 ? (totalProf / totalInv) * 100 : 0;
+
+      let gradeInfo = { grade: '초보', color: 'text-gray-600', bg: 'bg-gray-100' };
+      if (allSold.length > 0) {
+        if (rate < 0) gradeInfo = { grade: '손실', color: 'text-gray-700', bg: 'bg-gray-200' };
+        else if (rate < 10) gradeInfo = { grade: '하수', color: 'text-blue-700', bg: 'bg-blue-100' };
+        else if (rate < 20) gradeInfo = { grade: '중수', color: 'text-green-700', bg: 'bg-green-100' };
+        else if (rate < 30) gradeInfo = { grade: '고수', color: 'text-purple-700', bg: 'bg-purple-100' };
+        else if (rate < 50) gradeInfo = { grade: '실버', color: 'text-slate-700', bg: 'bg-slate-200' };
+        else if (rate < 60) gradeInfo = { grade: '골드', color: 'text-yellow-700', bg: 'bg-yellow-100' };
+        else gradeInfo = { grade: '투자의 신', color: 'text-red-700', bg: 'bg-gradient-to-r from-yellow-200 to-red-200' };
+      }
+      return { ...gradeInfo, totalProfit: totalProf, totalInvested: totalInv, returnRate: rate };
+    }
+
+    function getStats() {
+      const phases = getPhases();
+      let sold = phases.filter(p => p.sold && p.sellDate);
+      
+      if (state.statsStartDate || state.statsEndDate) {
+        sold = sold.filter(p => {
+          const sellDate = new Date(p.sellDate);
+          const start = state.statsStartDate ? new Date(state.statsStartDate) : new Date('1900-01-01');
+          const end = state.statsEndDate ? new Date(state.statsEndDate) : new Date('2100-12-31');
+          return sellDate >= start && sellDate <= end;
+        });
+      }
+      
+      if (sold.length === 0) return [];
+      
+      const grouped = {};
+      sold.forEach(p => {
+        const d = new Date(p.sellDate);
+        let key;
+        if (state.statsPeriod === 'daily') key = p.sellDate;
+        else if (state.statsPeriod === 'weekly') key = `${d.getFullYear()}-W${Math.ceil(((d - new Date(d.getFullYear(), 0, 1)) / 86400000 + new Date(d.getFullYear(), 0, 1).getDay() + 1) / 7)}`;
+        else if (state.statsPeriod === 'monthly') key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        else key = `${d.getFullYear()}`;
+
+        if (!grouped[key]) grouped[key] = { period: key, count: 0, inv: 0, prof: 0 };
+        const f = p.amount / p.buyRate;
+        grouped[key].count += 1;
+        grouped[key].inv += p.amount;
+        grouped[key].prof += f * p.sellRate - p.amount;
+      });
+
+      const sorted = Object.values(grouped).sort((a, b) => a.period.localeCompare(b.period));
+      let cumInv = 0, cumProf = 0;
+      return sorted.map(item => {
+        cumInv += item.inv;
+        cumProf += item.prof;
+        return {
+          ...item,
+          rate: ((item.prof / item.inv) * 100).toFixed(2),
+          cumInv,
+          cumProf,
+          cumRate: ((cumProf / cumInv) * 100).toFixed(2)
+        };
+      }).reverse();
+    }
+
+    // Render
+    function render() {
+      const phases = getPhases();
+      const currentRate = getCurrentRate();
+      const sym = state.activeTab === 'USD' ? '$' : '¥';
+      
+      const totalUsd = state.usdPhases.reduce((s, p) => s + (p.amount / p.buyRate), 0);
+      // JPY는 100엔당 환율이므로 100을 곱해서 실제 엔화 수량 계산
+      const totalJpy = state.jpyPhases.reduce((s, p) => s + (p.amount / p.buyRate * 100), 0);
+      const invested = phases.filter(p => p.completed && !p.sold).reduce((s, p) => s + p.amount, 0);
+      // JPY는 100엔당 환율이므로 100을 곱해서 실제 엔화 수량 계산
+      const foreignMultiplier = state.activeTab === 'JPY' ? 100 : 1;
+      const foreign = phases.filter(p => p.completed && !p.sold).reduce((s, p) => s + (p.amount / p.buyRate * foreignMultiplier), 0);
+      // 평균 매수가는 JPY의 경우 100엔당으로 표시
+      const avgRate = foreign > 0 ? ((invested / foreign) * foreignMultiplier).toFixed(2) : 0;
+      const unrealized = phases.filter(p => p.completed && !p.sold).reduce((s, p) => s + ((p.amount / p.buyRate) * currentRate - p.amount), 0);
+      const profit = phases.filter(p => p.sold).reduce((s, p) => s + ((p.amount / p.buyRate) * p.sellRate - p.amount), 0);
+      
+      const sorted = [...phases].sort((a, b) => a.sold && !b.sold ? 1 : !a.sold && b.sold ? -1 : 0);
+      const sold = sorted.filter(p => p.sold);
+      const active = sorted.filter(p => !p.sold);
+      const cumInvested = [...state.usdPhases, ...state.jpyPhases].reduce((s, p) => s + p.amount, 0);
+      const grade = getGrade();
+      const stats = getStats();
+
+      document.getElementById('app').innerHTML = `
+        <!-- Title Header -->
+        <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl shadow-lg p-4 mb-3">
+          <div class="flex items-center justify-center gap-3">
+            <i data-lucide="crown" class="w-8 h-8 text-yellow-300"></i>
+            <h1 class="text-2xl font-extrabold text-white tracking-wide">절대강자 분할환전</h1>
+            <i data-lucide="crown" class="w-8 h-8 text-yellow-300"></i>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-2xl shadow-lg p-2 mb-3 flex gap-2">
+          <button onclick="switchTab('USD')" class="flex-1 py-3 rounded-xl font-bold ${state.activeTab === 'USD' ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' : 'bg-gray-100 text-gray-600'}">🇺🇸 USD</button>
+          <button onclick="switchTab('JPY')" class="flex-1 py-3 rounded-xl font-bold ${state.activeTab === 'JPY' ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white' : 'bg-gray-100 text-gray-600'}">🇯🇵 JPY</button>
+        </div>
+
+        <!-- Rate Display -->
+        <div class="bg-white rounded-2xl shadow-lg p-4 mb-3">
+          <div class="flex items-center justify-center mb-4">
+            ${state.isEditingRate ? `
+              <div class="flex items-center gap-2">
+                <input type="number" id="tempRateInput" value="${state.tempRate}" class="w-32 px-4 py-3 border-2 border-blue-500 rounded-lg text-2xl font-bold text-center" step="0.1" />
+                <button onclick="confirmRate()" class="bg-blue-500 text-white px-4 py-3 rounded-lg font-bold text-lg">✓</button>
+                <button onclick="cancelRate()" class="bg-gray-400 text-white px-4 py-3 rounded-lg font-bold text-lg">✕</button>
+              </div>
+            ` : `
+              <div class="flex flex-col items-center gap-2">
+                <div class="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 rounded-xl border-2 border-blue-200">
+                  <i data-lucide="trending-up" class="w-8 h-8 text-blue-600"></i>
+                  <span class="text-4xl font-bold text-blue-600">${currentRate.toFixed(state.activeTab === 'USD' ? 1 : 2)}</span>
+                  <span class="text-2xl font-bold text-gray-600">원</span>
+                  <button onclick="startEditRate()" class="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-100 rounded-lg transition-all">
+                    <i data-lucide="edit-2" class="w-6 h-6"></i>
+                  </button>
+                  <button onclick="fetchRate()" ${state.isLoadingRate ? 'disabled' : ''} class="text-green-600 hover:text-green-800 p-2 hover:bg-green-100 rounded-lg transition-all">
+                    <i data-lucide="refresh-cw" class="w-6 h-6 ${state.isLoadingRate ? 'animate-spin' : ''}"></i>
+                  </button>
+                </div>
+                ${state.lastUpdated ? `<p class="text-sm text-gray-500">${state.lastUpdated.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 업데이트</p>` : ''}
+              </div>
+            `}
+          </div>
+        </div>
+
+        <!-- Portfolio Summary -->
+        <div class="bg-white rounded-2xl shadow-lg p-4 mb-3">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <i data-lucide="dollar-sign" class="w-7 h-7 text-green-600"></i>
+              <div>
+                <h1 class="text-lg font-bold text-gray-800">${state.activeTab} 분할매수</h1>
+                <p class="text-xs text-gray-500">투자 포트폴리오</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-2 mb-2">
+            <div class="bg-blue-50 rounded-lg p-2.5">
+              <p class="text-xs text-gray-600 mb-1">초기예산</p>
+              <p class="font-bold text-sm text-blue-600">${(state.initialBudget / 10000).toFixed(0)}만원</p>
+            </div>
+            <div class="bg-purple-50 rounded-lg p-2.5">
+              <p class="text-xs text-gray-600 mb-1">현재예산</p>
+              <p class="font-bold text-sm text-purple-600">${((state.initialBudget + profit) / 10000).toFixed(0)}만원</p>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-3 gap-2">
+            <div class="bg-indigo-50 rounded-lg p-2.5">
+              <p class="text-xs text-gray-600 mb-1">누적투자</p>
+              <p class="font-bold text-sm text-indigo-600">${(cumInvested / 10000).toFixed(0)}만원</p>
+            </div>
+            <div class="bg-green-50 rounded-lg p-2.5">
+              <p class="text-xs text-gray-600 mb-1">누적달러</p>
+              <p class="font-bold text-sm text-green-600">$${totalUsd.toFixed(2)}</p>
+            </div>
+            <div class="bg-red-50 rounded-lg p-2.5">
+              <p class="text-xs text-gray-600 mb-1">누적엔화</p>
+              <p class="font-bold text-sm text-red-600">¥${totalJpy.toFixed(2)}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grade Card -->
+        <div class="${grade.bg} rounded-xl shadow-lg p-4 mb-3">
+          <div class="flex flex-col items-center">
+            <div class="flex items-center justify-center gap-2 mb-3">
+              <i data-lucide="trophy" class="w-6 h-6 ${grade.color}"></i>
+              <h3 class="text-xl font-bold ${grade.color}">투자 등급: ${grade.grade}</h3>
+            </div>
+            <div class="w-full bg-white bg-opacity-50 rounded-lg p-3">
+              <div class="text-center">
+                <p class="text-xs text-gray-600 mb-1">누적 실현수익 (매도완료)</p>
+                <p class="text-2xl font-bold ${grade.totalProfit >= 0 ? 'text-red-600' : 'text-blue-600'}">
+                  ${grade.totalProfit >= 0 ? '+' : ''}${Math.round(grade.totalProfit).toLocaleString()}원
+                </p>
+                <p class="text-sm font-semibold mt-1 ${grade.totalProfit >= 0 ? 'text-red-500' : 'text-blue-500'}">
+                  ${grade.totalProfit >= 0 ? '+' : ''}${grade.returnRate.toFixed(2)}%
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auto Sell Toggle -->
+        <div class="bg-white rounded-xl shadow-lg p-4 mb-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full ${state.autoSell ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}"></div>
+              <span class="font-bold text-gray-800">자동 매도</span>
+            </div>
+            <button onclick="toggleAutoSell()" class="relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${state.autoSell ? 'bg-green-500' : 'bg-gray-300'}">
+              <span class="inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${state.autoSell ? 'translate-x-7' : 'translate-x-1'}"></span>
+            </button>
+          </div>
+          ${state.autoSell ? '<p class="text-xs text-gray-600 mt-2">💡 목표환율 +1원 도달 시 자동으로 매도됩니다</p>' : ''}
+        </div>
+
+        <!-- Investment Status -->
+        <div class="bg-white rounded-xl shadow-lg p-4 mb-3">
+          <h3 class="font-bold text-gray-800 mb-3 text-sm">📊 투자 현황</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-blue-50 rounded p-3">
+              <p class="text-xs text-gray-600 mb-1">총 투자금</p>
+              <p class="font-bold text-blue-600">${(invested / 10000).toFixed(0)}만원</p>
+            </div>
+            <div class="bg-green-50 rounded p-3">
+              <p class="text-xs text-gray-600 mb-1">보유 ${state.activeTab}</p>
+              <p class="font-bold text-green-600">${sym}${foreign.toFixed(2)}</p>
+            </div>
+            <div class="bg-purple-50 rounded p-3">
+              <p class="text-xs text-gray-600 mb-1">평균 매수가</p>
+              <p class="font-bold text-purple-600">${avgRate}원</p>
+            </div>
+            <div class="bg-orange-50 rounded p-3">
+              <p class="text-xs text-gray-600 mb-1">평가손익</p>
+              <p class="font-bold ${unrealized >= 0 ? 'text-red-600' : 'text-blue-600'}">${unrealized >= 0 ? '+' : ''}${(unrealized / 10000).toFixed(1)}만원</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Button -->
+        <button onclick="toggleStats()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg mb-3">
+          <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+          ${state.showStats ? '통계 숨기기' : '기간별 통계 보기'}
+        </button>
+
+        ${state.showStats ? renderStats(stats) : ''}
+
+        <!-- Add Phase Button -->
+        <button onclick="addPhase()" class="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg mb-3">
+          <i data-lucide="plus" class="w-5 h-5"></i>
+          새 매수 추가
+        </button>
+
+        <!-- Active Phases -->
+        ${active.map((p, i) => renderActivePhase(p, i, currentRate, sym)).join('')}
+
+        <!-- Sold Phases -->
+        ${sold.length > 0 ? `
+          <div class="mt-4">
+            <h3 class="font-bold text-gray-700 mb-3 text-sm">✅ 매도 완료 (${sold.length}건)</h3>
+            ${sold.slice(0, state.soldItemsVisible).map(p => renderSoldPhase(p)).join('')}
+            ${sold.length > state.soldItemsVisible ? `
+              <button onclick="loadMoreSold()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-lg font-medium">
+                더보기 (${sold.length - state.soldItemsVisible}건)
+              </button>
+            ` : ''}
+          </div>
+        ` : ''}
+      `;
+
+      lucide.createIcons();
+    }
+
+    function renderStats(stats) {
+      return `
+        <div class="bg-white rounded-xl shadow-lg p-4 mb-3">
+          <div class="mb-4">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="font-bold text-gray-800 text-sm">📊 기간별 투자 통계</h3>
+              <div class="flex gap-1">
+                ${['daily', 'weekly', 'monthly', 'yearly'].map(p => `
+                  <button onclick="setStatsPeriod('${p}')" class="px-2 py-1 rounded text-xs ${state.statsPeriod === p ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-700'}">
+                    ${p === 'daily' ? '일' : p === 'weekly' ? '주' : p === 'monthly' ? '월' : '년'}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+            
+            <div class="mb-3 p-3 bg-gray-50 rounded-lg">
+              <p class="text-xs font-semibold text-gray-700 mb-2">📅 기간 검색</p>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-xs text-gray-600 block mb-1">시작일</label>
+                  <input type="date" value="${state.statsStartDate}" onchange="setStatsStartDate(this.value)" class="w-full px-2 py-1 border rounded text-xs" />
+                </div>
+                <div>
+                  <label class="text-xs text-gray-600 block mb-1">종료일</label>
+                  <input type="date" value="${state.statsEndDate}" onchange="setStatsEndDate(this.value)" class="w-full px-2 py-1 border rounded text-xs" />
+                </div>
+              </div>
+              ${(state.statsStartDate || state.statsEndDate) ? `
+                <button onclick="resetStatsDates()" class="mt-2 w-full bg-gray-300 text-gray-700 py-1 rounded text-xs font-medium">
+                  기간 초기화
+                </button>
+              ` : ''}
+            </div>
+          </div>
+          
+          ${stats.length > 0 ? `
+            <div class="space-y-3">
+              ${stats.map(s => `
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 border">
+                  <div class="flex justify-between items-start mb-2">
+                    <div>
+                      <p class="font-bold text-sm">${s.period}</p>
+                      <p class="text-xs text-gray-600">매도 ${s.count}건</p>
+                    </div>
+                    <div class="px-2 py-1 rounded-lg ${parseFloat(s.rate) >= 0 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}">
+                      <p class="text-xs font-bold">${parseFloat(s.rate) >= 0 ? '+' : ''}${s.rate}%</p>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2 mb-2">
+                    <div class="bg-white rounded p-2">
+                      <p class="text-xs text-gray-600">투자금</p>
+                      <p class="font-bold text-sm text-blue-600">${(s.inv / 10000).toFixed(0)}만</p>
+                    </div>
+                    <div class="bg-white rounded p-2">
+                      <p class="text-xs text-gray-600">실현수익</p>
+                      <p class="font-bold text-sm ${s.prof >= 0 ? 'text-red-600' : 'text-blue-600'}">${s.prof >= 0 ? '+' : ''}${(s.prof / 10000).toFixed(1)}만</p>
+                    </div>
+                  </div>
+                  <div class="border-t pt-2">
+                    <p class="text-xs font-semibold text-gray-700 mb-1">누적 현황</p>
+                    <div class="grid grid-cols-3 gap-2">
+                      <div class="bg-indigo-50 rounded p-1.5">
+                        <p class="text-xs text-gray-600">누적투자</p>
+                        <p class="font-bold text-xs text-indigo-600">${(s.cumInv / 10000).toFixed(0)}만</p>
+                      </div>
+                      <div class="bg-pink-50 rounded p-1.5">
+                        <p class="text-xs text-gray-600">누적수익</p>
+                        <p class="font-bold text-xs ${s.cumProf >= 0 ? 'text-pink-600' : 'text-blue-600'}">${s.cumProf >= 0 ? '+' : ''}${(s.cumProf / 10000).toFixed(1)}만</p>
+                      </div>
+                      <div class="bg-amber-50 rounded p-1.5">
+                        <p class="text-xs text-gray-600">누적률</p>
+                        <p class="font-bold text-xs ${s.cumProf >= 0 ? 'text-amber-600' : 'text-blue-600'}">${parseFloat(s.cumRate) >= 0 ? '+' : ''}${s.cumRate}%</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          ` : `
+            <div class="text-center py-8">
+              <p class="text-sm text-gray-500">선택한 기간에 매도 완료된 거래가 없습니다</p>
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    function renderActivePhase(p, i, currentRate, sym) {
+      // JPY는 100엔당 환율이므로 실제 엔화 수량은 100을 곱함
+      const foreignMultiplier = state.activeTab === 'JPY' ? 100 : 1;
+      const f = p.amount / p.buyRate * foreignMultiplier;
+      const diff = currentRate - p.buyRate;
+      const cp = (p.amount / p.buyRate * currentRate) - p.amount;
+      const targetReached = p.completed && currentRate >= p.sellRate;
+      const isExpanded = state.expandedPhase === p.id;
+
+      return `
+        <div class="bg-white rounded-xl shadow-md mb-3 ${targetReached ? 'animate-pulse ring-4 ring-yellow-400' : ''}">
+          <div onclick="toggleExpand(${p.id})" class="p-4 cursor-pointer ${p.completed ? 'bg-green-50' : 'bg-blue-50'} rounded-t-xl">
+            <div class="flex justify-between items-start">
+              <div class="flex items-start gap-3 flex-1">
+                ${p.completed ? '<i data-lucide="check-circle" class="w-6 h-6 text-green-500"></i>' : '<i data-lucide="shopping-cart" class="w-6 h-6 text-blue-500"></i>'}
+                <div class="flex-1">
+                  <p class="font-bold text-gray-800">${i + 1}차 매수</p>
+                  <p class="text-xs text-gray-600 mt-0.5">${p.completed ? `매수일: ${p.date}` : '매수대기'}</p>
+                  ${p.completed ? `
+                    <div class="mt-2 space-y-1">
+                      <p class="text-xs font-bold ${diff >= 0 ? 'text-red-600' : 'text-blue-600'}">환율차: ${diff >= 0 ? '+' : ''}${diff.toFixed(state.activeTab === 'USD' ? 1 : 2)}원</p>
+                      <p class="text-xs font-bold ${cp >= 0 ? 'text-red-600' : 'text-blue-600'}">현재: ${cp >= 0 ? '+' : ''}${(cp / 10000).toFixed(1)}만원</p>
+                      ${targetReached ? '<p class="text-xs font-bold text-yellow-600 animate-pulse">🎯 목표도달!</p>' : ''}
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+              ${isExpanded ? '<i data-lucide="chevron-up" class="w-5 h-5"></i>' : '<i data-lucide="chevron-down" class="w-5 h-5"></i>'}
+            </div>
+          </div>
+          ${isExpanded ? `
+            <div class="p-4 space-y-3">
+              <div>
+                <label class="text-xs text-gray-600 block mb-1 font-semibold">투자금액 (KRW)</label>
+                <input type="number" value="${p.amount}" onchange="updatePhase(${p.id}, 'amount', parseFloat(this.value) || 0)" class="w-full px-3 py-2 border rounded" ${p.completed ? 'disabled' : ''} />
+              </div>
+              <div>
+                <label class="text-xs text-gray-600 block mb-1 font-semibold">매수환율</label>
+                <input type="number" value="${p.buyRate}" onchange="updatePhase(${p.id}, 'buyRate', parseFloat(this.value) || 0)" class="w-full px-3 py-2 border rounded" ${p.completed ? 'disabled' : ''} step="0.01" />
+              </div>
+              <div>
+                <label class="text-xs text-gray-600 block mb-1 font-semibold">목표 매도환율</label>
+                <input type="number" value="${p.sellRate}" onchange="updatePhase(${p.id}, 'sellRate', parseFloat(this.value) || 0)" class="w-full px-3 py-2 border rounded" step="0.01" />
+              </div>
+              <div class="bg-gray-50 rounded p-3 text-sm space-y-1">
+                <p>💵 ${sym}${f.toFixed(2)}</p>
+                <p>📈 지금 매도시: ${cp >= 0 ? '+' : ''}${cp.toLocaleString()}원</p>
+              </div>
+              <div class="flex gap-2">
+                ${!p.completed ? `<button onclick="toggleComplete(${p.id})" class="flex-1 bg-green-500 text-white py-2 rounded font-bold">매수완료</button>` : ''}
+                ${p.completed ? `<button onclick="toggleSold(${p.id})" class="flex-1 bg-purple-500 text-white py-2 rounded font-bold text-sm">매도 (${cp >= 0 ? '+' : ''}${(cp / 10000).toFixed(1)}만)</button>` : ''}
+                <button onclick="deletePhase(${p.id})" class="px-4 bg-red-500 text-white rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function renderSoldPhase(p) {
+      // JPY는 100엔당 환율이므로 실제 엔화 수량은 100을 곱함
+      const foreignMultiplier = state.activeTab === 'JPY' ? 100 : 1;
+      const f = p.amount / p.buyRate * foreignMultiplier;
+      const pr = (p.amount / p.buyRate * p.sellRate) - p.amount;
+      const isExpanded = state.expandedPhase === p.id;
+
+      return `
+        <div class="bg-white rounded-xl shadow-md mb-3 opacity-70">
+          <div onclick="toggleExpand(${p.id})" class="bg-gray-100 p-4 cursor-pointer rounded-t-xl">
+            <div class="flex justify-between items-start">
+              <div class="flex-1">
+                <p class="font-bold text-gray-800">매도완료 ${p.id}차</p>
+                <p class="text-xs text-gray-600">매도일: ${p.sellDate}</p>
+                <p class="text-sm font-bold mt-1 ${pr >= 0 ? 'text-red-600' : 'text-blue-600'}">
+                  실현: ${pr >= 0 ? '+' : ''}${(pr / 10000).toFixed(1)}만원 (${((pr / p.amount) * 100).toFixed(2)}%)
+                </p>
+              </div>
+              ${isExpanded ? '<i data-lucide="chevron-up" class="w-5 h-5"></i>' : '<i data-lucide="chevron-down" class="w-5 h-5"></i>'}
+            </div>
+          </div>
+          ${isExpanded ? `
+            <div class="p-4 bg-gray-50 space-y-3 rounded-b-xl">
+              <input type="number" value="${p.amount}" onchange="updatePhase(${p.id}, 'amount', parseFloat(this.value) || 0)" class="w-full px-3 py-2 border rounded" placeholder="매수금액" />
+              <input type="number" value="${p.buyRate}" onchange="updatePhase(${p.id}, 'buyRate', parseFloat(this.value) || 0)" class="w-full px-3 py-2 border rounded" step="0.01" placeholder="매수환율" />
+              <input type="number" value="${p.sellRate}" onchange="updatePhase(${p.id}, 'sellRate', parseFloat(this.value) || 0)" class="w-full px-3 py-2 border rounded" step="0.01" placeholder="매도환율" />
+              <input type="date" value="${p.date}" onchange="updatePhase(${p.id}, 'date', this.value)" class="w-full px-3 py-2 border rounded" placeholder="매수일" />
+              <input type="date" value="${p.sellDate}" onchange="updatePhase(${p.id}, 'sellDate', this.value)" class="w-full px-3 py-2 border rounded" placeholder="매도일" />
+              <button onclick="deletePhase(${p.id})" class="w-full bg-red-500 text-white py-2 rounded flex items-center justify-center gap-2">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                삭제
+              </button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // Event handlers
+    function switchTab(tab) {
+      state.activeTab = tab;
+      state.tempRate = getCurrentRate();
+      state.expandedPhase = null;
+      render();
+    }
+
+    function toggleExpand(id) {
+      state.expandedPhase = state.expandedPhase === id ? null : id;
+      render();
+    }
+
+    function startEditRate() {
+      state.isEditingRate = true;
+      state.tempRate = getCurrentRate();
+      render();
+      setTimeout(() => document.getElementById('tempRateInput')?.focus(), 0);
+    }
+
+    function confirmRate() {
+      const input = document.getElementById('tempRateInput');
+      const value = parseFloat(input?.value) || 0;
+      setCurrentRate(value);
+      state.isEditingRate = false;
+      saveToStorage();
+      checkAutoSell();
+      render();
+    }
+
+    function cancelRate() {
+      state.isEditingRate = false;
+      state.tempRate = getCurrentRate();
+      render();
+    }
+
+    function toggleAutoSell() {
+      state.autoSell = !state.autoSell;
+      render();
+    }
+
+    function toggleStats() {
+      state.showStats = !state.showStats;
+      render();
+    }
+
+    function setStatsPeriod(period) {
+      state.statsPeriod = period;
+      render();
+    }
+
+    function setStatsStartDate(date) {
+      state.statsStartDate = date;
+      render();
+    }
+
+    function setStatsEndDate(date) {
+      state.statsEndDate = date;
+      render();
+    }
+
+    function resetStatsDates() {
+      state.statsStartDate = '';
+      state.statsEndDate = '';
+      render();
+    }
+
+    function loadMoreSold() {
+      state.soldItemsVisible += 10;
+      render();
+    }
+
+    // Initialize
+    loadFromStorage();
+    fetchRate();
+    render();
+
+    // Auto refresh rate every 10 minutes
+    setInterval(fetchRate, 600000);
+  </script>
+</body>
+</html>
