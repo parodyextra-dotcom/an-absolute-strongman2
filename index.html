@@ -907,7 +907,11 @@
 
       var displayValue = state.numpadValue === '' ? '0' : parseInt(state.numpadValue, 10).toLocaleString();
 
+      var randomQuote = getRandomQuote();
       var modalHtml = '<div id="numpad-modal" class="fixed inset-0 bg-black bg-opacity-50 flex flex-col justify-end z-[100]" onclick="if(event.target===this)closeNumpad()">' +
+        '<div class="bg-gradient-to-b from-gray-900 to-gray-800 w-full max-w-md mx-auto px-4 py-6 text-center">' +
+          '<p class="text-yellow-400 text-base italic font-semibold leading-relaxed" style="text-shadow: 0 2px 4px rgba(0,0,0,0.5);">💰 "' + randomQuote + '"</p>' +
+        '</div>' +
         '<div class="bg-white w-full max-w-md mx-auto rounded-t-2xl numpad-modal">' +
           '<div class="flex justify-between items-center p-3 border-b bg-gray-700 rounded-t-2xl">' +
             '<span class="text-white font-bold text-base">' + state.numpadTitle + '</span>' +
@@ -916,8 +920,7 @@
           '<div class="bg-white border-b">' +
             '<div id="numpad-display" class="numpad-display">' + displayValue + '</div>' +
           '</div>' +
-          '<div class="flex items-center justify-between px-3 py-2 border-b bg-gray-100">' +
-            '<button onclick="openNumpadFavorites()" class="text-gray-600 text-sm">즐겨찾기</button>' +
+          '<div class="flex items-center justify-end px-3 py-2 border-b bg-gray-100">' +
             '<button onclick="numpadInput(\'DEL\')" class="w-10 h-10 flex items-center justify-center bg-gray-300 rounded-lg">' +
               '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>' +
             '</button>' +
@@ -946,9 +949,112 @@
       document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
 
-    function openNumpadFavorites() {
-      // 즐겨찾기 기능 (추후 구현 가능)
-      showToast('즐겨찾기 기능은 준비 중입니다');
+    // 돈과 금융에 관한 명언 100개
+    var financeQuotes = [
+      "부는 행복의 열쇠가 아니라 문을 열 뿐이다.",
+      "돈을 절약하는 것은 버는 것과 같다.",
+      "부자가 되려면 먼저 부자처럼 생각하라.",
+      "저축은 미래의 자신에게 주는 선물이다.",
+      "작은 돈을 아끼지 않으면 큰 돈도 모으지 못한다.",
+      "투자는 지식이 돈이 되는 유일한 방법이다.",
+      "돈은 좋은 하인이지만 나쁜 주인이다.",
+      "재산은 바다와 같다, 마실수록 목마르다.",
+      "시간은 돈이다, 그러나 돈은 시간을 살 수 없다.",
+      "부의 비밀은 수입보다 적게 쓰는 것이다.",
+      "복리는 세계 8번째 불가사의다. - 아인슈타인",
+      "위험 없이는 보상도 없다.",
+      "투자의 제1원칙: 절대 돈을 잃지 마라. - 워렌 버핏",
+      "분산투자는 무지에 대한 보호막이다. - 워렌 버핏",
+      "다른 사람이 탐욕스러울 때 두려워하라. - 워렌 버핏",
+      "가격은 당신이 지불하는 것, 가치는 당신이 얻는 것.",
+      "돈을 벌기 위해 돈을 써야 한다.",
+      "절약은 부의 어머니다.",
+      "빚은 노예의 사슬이다.",
+      "현금은 왕이다.",
+      "내일을 위해 오늘 저축하라.",
+      "돈은 자유를 살 수 있다.",
+      "부자는 자산을 산다, 가난한 자는 부채를 산다. - 로버트 기요사키",
+      "당신의 수입은 당신의 철학의 결과다. - 짐 론",
+      "경제적 자유는 인생의 진정한 자유다.",
+      "돈을 다스리지 못하면 돈이 당신을 다스린다.",
+      "투자하지 않는 것이 가장 큰 위험이다.",
+      "작은 습관이 큰 부를 만든다.",
+      "수입의 10%는 반드시 저축하라.",
+      "미래는 오늘 준비하는 자의 것이다.",
+      "부자는 돈을 위해 일하지 않고 돈이 일하게 한다.",
+      "지출을 줄이는 것이 수입을 늘리는 것보다 쉽다.",
+      "인플레이션은 보이지 않는 세금이다.",
+      "돈은 도구일 뿐, 목적이 되어선 안 된다.",
+      "가난은 돈이 없는 것이 아니라 꿈이 없는 것이다.",
+      "최고의 투자는 자기 자신에게 하는 투자다.",
+      "재테크의 시작은 기록이다.",
+      "충동구매는 가난의 지름길이다.",
+      "현명한 소비가 현명한 저축이다.",
+      "돈을 버는 것보다 지키는 것이 어렵다.",
+      "부의 축적은 마라톤이지 단거리 경주가 아니다.",
+      "빚을 두려워하라, 투자를 사랑하라.",
+      "오늘의 희생이 내일의 풍요다.",
+      "돈에 대해 이야기하는 것을 두려워 말라.",
+      "금융 문맹은 21세기의 새로운 문맹이다.",
+      "수입이 늘면 생활 수준이 아닌 저축을 늘려라.",
+      "비상금은 마음의 평화다.",
+      "세금을 알면 돈이 보인다.",
+      "돈은 흐르는 물과 같다, 막히면 썩는다.",
+      "투자는 시간의 함수다.",
+      "행복을 돈으로 살 수 없지만, 불행은 피할 수 있다.",
+      "부의 기초는 근검절약이다.",
+      "버는 만큼이 아니라 쓰는 만큼이 부를 결정한다.",
+      "재정 계획 없는 삶은 나침반 없는 항해다.",
+      "돈은 신뢰의 약속이다.",
+      "가치 있는 것에 투자하라.",
+      "시장은 탐욕과 공포 사이를 오간다.",
+      "장기 투자자가 최후의 승자다.",
+      "모든 지출은 선택이다.",
+      "재정적 독립은 선택의 자유다.",
+      "돈은 에너지다, 흐르게 하라.",
+      "부자의 습관을 가난한 자가 배워야 한다.",
+      "목표 없는 저축은 동기 없는 노력이다.",
+      "돈이 전부는 아니지만 중요한 것은 맞다.",
+      "현명한 차입은 지렛대가 된다.",
+      "투자 실패는 배움의 기회다.",
+      "부동산은 시간의 친구다.",
+      "돈의 가치는 사용 방법에 달렸다.",
+      "예산은 돈에 이름을 붙이는 것이다.",
+      "수동 소득이 진정한 부다.",
+      "돈을 벌려면 먼저 돈을 공부하라.",
+      "작게 시작해서 꾸준히 늘려라.",
+      "실패를 두려워 말고 배움으로 삼아라.",
+      "경제적 안정이 정신적 안정이다.",
+      "미래의 나를 위해 현재의 나를 훈련하라.",
+      "소득의 다변화가 위험의 분산이다.",
+      "시간을 아끼는 것이 돈을 버는 것이다.",
+      "지출 추적은 부의 첫걸음이다.",
+      "부자는 기회를, 가난한 자는 장애물을 본다.",
+      "돈보다 시간이 더 소중하다.",
+      "재정 목표를 글로 적어라.",
+      "돈은 신용을 따라 움직인다.",
+      "큰 꿈이 큰 부를 만든다.",
+      "절제력이 부의 근육이다.",
+      "투자는 감정이 아닌 논리로 하라.",
+      "건강이 최고의 자산이다.",
+      "가족의 재정 교육이 중요하다.",
+      "돈 걱정 없는 삶이 진정한 부다.",
+      "수입원을 늘리는 것이 부의 지름길이다.",
+      "시간이 지날수록 복리의 마법이 펼쳐진다.",
+      "불확실성 속에서 확실한 것은 준비뿐이다.",
+      "성공한 투자자는 인내심이 강하다.",
+      "욕심을 버리면 손실을 줄일 수 있다.",
+      "재정 건강은 신체 건강만큼 중요하다.",
+      "돈은 도구다, 어떻게 쓰느냐가 중요하다.",
+      "매일 조금씩이 결국 산을 옮긴다.",
+      "재정적 자유를 향한 여정을 즐겨라.",
+      "오늘 심은 씨앗이 내일의 과실이다.",
+      "당신의 재정은 당신의 책임이다.",
+      "꾸준함이 천재를 이긴다."
+    ];
+
+    function getRandomQuote() {
+      return financeQuotes[Math.floor(Math.random() * financeQuotes.length)];
     }
 
     // ============================================
@@ -1092,7 +1198,11 @@
 
       var displayValue = state.calcExpression === '' ? '0' : formatCalcExpression(state.calcExpression);
 
+      var calcRandomQuote = getRandomQuote();
       var modalHtml = '<div id="calculator-modal" class="fixed inset-0 bg-black bg-opacity-50 flex flex-col justify-end z-[100]" onclick="if(event.target===this)closeCalculator()">' +
+        '<div class="bg-gradient-to-b from-gray-900 to-gray-800 w-full max-w-md mx-auto px-4 py-6 text-center">' +
+          '<p class="text-yellow-400 text-base italic font-semibold leading-relaxed" style="text-shadow: 0 2px 4px rgba(0,0,0,0.5);">💰 "' + calcRandomQuote + '"</p>' +
+        '</div>' +
         '<div class="bg-white w-full max-w-md mx-auto rounded-t-2xl numpad-modal">' +
           '<div class="flex justify-between items-center p-3 border-b bg-gray-700 rounded-t-2xl">' +
             '<span class="text-white font-bold text-base">' + state.calcTitle + '</span>' +
