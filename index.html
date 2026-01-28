@@ -70,6 +70,102 @@
     .animate-slide-right { animation: slideInRight 0.25s ease-out; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* 숫자 키패드 모달 스타일 */
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .numpad-modal {
+      animation: slideUp 0.3s ease-out;
+    }
+    .numpad-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 500;
+      background: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      transition: all 0.1s;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    .numpad-btn:active {
+      background: #e0e0e0;
+      transform: scale(0.95);
+    }
+    .numpad-btn-action {
+      background: #4a5568;
+      color: white;
+    }
+    .numpad-btn-action:active {
+      background: #2d3748;
+    }
+    .numpad-btn-clear {
+      font-size: 1.75rem;
+      font-weight: 400;
+    }
+    .numpad-btn-submit {
+      background: #4a5568;
+      color: white;
+      font-size: 1rem;
+    }
+    .numpad-btn-submit:active {
+      background: #2d3748;
+    }
+    .numpad-display {
+      font-size: 2.5rem;
+      text-align: right;
+      padding: 1rem;
+      font-weight: 300;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    
+    /* 계산기 모달 스타일 */
+    .calc-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 500;
+      background: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      transition: all 0.1s;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    .calc-btn:active {
+      background: #e0e0e0;
+      transform: scale(0.95);
+    }
+    .calc-btn-op {
+      font-size: 1.75rem;
+      font-weight: 400;
+    }
+    .calc-btn-equal {
+      background: #4a5568;
+      color: white;
+      font-size: 1.25rem;
+    }
+    .calc-btn-equal:active {
+      background: #2d3748;
+    }
+    .calc-display {
+      font-size: 2.5rem;
+      text-align: right;
+      padding: 1rem;
+      font-weight: 300;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
   </style>
 </head>
 <body class="bg-gray-50">
@@ -120,7 +216,20 @@
       showAddInvestment: false,
       showRankInfo: false,
       showIframeModal: false,
-      isLoading: true
+      isLoading: true,
+      // 숫자 키패드 모달 상태
+      showNumpad: false,
+      numpadTargetId: null,
+      numpadValue: '',
+      numpadTitle: '금액 입력',
+      numpadCallback: null,
+      // 계산기 모달 상태
+      showCalculator: false,
+      calcTargetId: null,
+      calcValue: '',
+      calcExpression: '',
+      calcTitle: '계산기',
+      calcCallback: null
     };
 
     // Flutter WebView Bridge Communication
@@ -714,6 +823,349 @@
       
       clearTimeout(toastTimeout);
       toastTimeout = setTimeout(function() { toast.remove(); }, 3000);
+    }
+
+    // ============================================
+    // 숫자 키패드 모달 (지출금액 스타일)
+    // ============================================
+    function openNumpad(targetId, title, initialValue, callback) {
+      state.showNumpad = true;
+      state.numpadTargetId = targetId;
+      state.numpadTitle = title || '금액 입력';
+      state.numpadValue = initialValue ? String(initialValue).replace(/[^\d]/g, '') : '';
+      state.numpadCallback = callback || null;
+      renderNumpadModal();
+    }
+
+    function closeNumpad() {
+      state.showNumpad = false;
+      state.numpadTargetId = null;
+      state.numpadValue = '';
+      state.numpadCallback = null;
+      var modal = document.getElementById('numpad-modal');
+      if (modal) modal.remove();
+    }
+
+    function numpadInput(val) {
+      if (val === 'C') {
+        state.numpadValue = '';
+      } else if (val === 'DEL') {
+        state.numpadValue = state.numpadValue.slice(0, -1);
+      } else if (val === '00' || val === '000') {
+        state.numpadValue += val;
+      } else {
+        state.numpadValue += val;
+      }
+      updateNumpadDisplay();
+    }
+
+    function updateNumpadDisplay() {
+      var display = document.getElementById('numpad-display');
+      if (display) {
+        var value = state.numpadValue;
+        if (value === '') {
+          display.textContent = '0';
+        } else {
+          display.textContent = parseInt(value, 10).toLocaleString();
+        }
+      }
+    }
+
+    function submitNumpad() {
+      var value = parseInt(state.numpadValue, 10) || 0;
+      
+      // 대상 input에 값 설정
+      if (state.numpadTargetId) {
+        var targetInput = document.getElementById(state.numpadTargetId);
+        if (targetInput) {
+          targetInput.value = value > 0 ? value.toLocaleString() : '';
+          // input 이벤트 트리거 (할부 정보 업데이트 등)
+          var event = new Event('input', { bubbles: true });
+          targetInput.dispatchEvent(event);
+        }
+      }
+      
+      // 콜백 실행
+      if (state.numpadCallback && typeof state.numpadCallback === 'function') {
+        state.numpadCallback(value);
+      }
+      
+      closeNumpad();
+    }
+
+    function openCalculatorFromNumpad() {
+      var currentValue = state.numpadValue;
+      var targetId = state.numpadTargetId;
+      var callback = state.numpadCallback;
+      closeNumpad();
+      openCalculator(targetId, '계산기', currentValue, callback);
+    }
+
+    function renderNumpadModal() {
+      var existing = document.getElementById('numpad-modal');
+      if (existing) existing.remove();
+
+      var displayValue = state.numpadValue === '' ? '0' : parseInt(state.numpadValue, 10).toLocaleString();
+
+      var modalHtml = '<div id="numpad-modal" class="fixed inset-0 bg-black bg-opacity-50 flex flex-col justify-end z-[100]" onclick="if(event.target===this)closeNumpad()">' +
+        '<div class="bg-white w-full max-w-md mx-auto rounded-t-2xl numpad-modal">' +
+          '<div class="flex justify-between items-center p-3 border-b bg-gray-700 rounded-t-2xl">' +
+            '<span class="text-white font-bold text-base">' + state.numpadTitle + '</span>' +
+            '<button onclick="closeNumpad()" class="text-white text-2xl leading-none">&times;</button>' +
+          '</div>' +
+          '<div class="bg-white border-b">' +
+            '<div id="numpad-display" class="numpad-display">' + displayValue + '</div>' +
+          '</div>' +
+          '<div class="flex items-center justify-between px-3 py-2 border-b bg-gray-100">' +
+            '<button onclick="openNumpadFavorites()" class="text-gray-600 text-sm">즐겨찾기</button>' +
+            '<button onclick="numpadInput(\'DEL\')" class="w-10 h-10 flex items-center justify-center bg-gray-300 rounded-lg">' +
+              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>' +
+            '</button>' +
+          '</div>' +
+          '<div class="grid grid-cols-4 gap-0">' +
+            '<button onclick="numpadInput(\'7\')" class="numpad-btn h-16">7</button>' +
+            '<button onclick="numpadInput(\'8\')" class="numpad-btn h-16">8</button>' +
+            '<button onclick="numpadInput(\'9\')" class="numpad-btn h-16">9</button>' +
+            '<button onclick="numpadInput(\'C\')" class="numpad-btn numpad-btn-clear h-16">C</button>' +
+            '<button onclick="numpadInput(\'4\')" class="numpad-btn h-16">4</button>' +
+            '<button onclick="numpadInput(\'5\')" class="numpad-btn h-16">5</button>' +
+            '<button onclick="numpadInput(\'6\')" class="numpad-btn h-16">6</button>' +
+            '<button onclick="openCalculatorFromNumpad()" class="numpad-btn numpad-btn-action h-16 text-xl">+-×</button>' +
+            '<button onclick="numpadInput(\'1\')" class="numpad-btn h-16">1</button>' +
+            '<button onclick="numpadInput(\'2\')" class="numpad-btn h-16">2</button>' +
+            '<button onclick="numpadInput(\'3\')" class="numpad-btn h-16">3</button>' +
+            '<button onclick="numpadInput(\'-\')" class="numpad-btn h-16 text-2xl">−</button>' +
+            '<button onclick="numpadInput(\'0\')" class="numpad-btn h-16">0</button>' +
+            '<button onclick="numpadInput(\'00\')" class="numpad-btn h-16">00</button>' +
+            '<button onclick="numpadInput(\'000\')" class="numpad-btn h-16">000</button>' +
+            '<button onclick="submitNumpad()" class="numpad-btn numpad-btn-submit h-16">입력</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function openNumpadFavorites() {
+      // 즐겨찾기 기능 (추후 구현 가능)
+      showToast('즐겨찾기 기능은 준비 중입니다');
+    }
+
+    // ============================================
+    // 계산기 모달
+    // ============================================
+    function openCalculator(targetId, title, initialValue, callback) {
+      state.showCalculator = true;
+      state.calcTargetId = targetId;
+      state.calcTitle = title || '계산기';
+      state.calcValue = initialValue ? String(initialValue).replace(/[^\d]/g, '') : '';
+      state.calcExpression = state.calcValue;
+      state.calcCallback = callback || null;
+      renderCalculatorModal();
+    }
+
+    function closeCalculator() {
+      state.showCalculator = false;
+      state.calcTargetId = null;
+      state.calcValue = '';
+      state.calcExpression = '';
+      state.calcCallback = null;
+      var modal = document.getElementById('calculator-modal');
+      if (modal) modal.remove();
+    }
+
+    function calcInput(val) {
+      if (val === 'C') {
+        state.calcExpression = '';
+        state.calcValue = '';
+      } else if (val === 'DEL') {
+        state.calcExpression = state.calcExpression.slice(0, -1);
+      } else if (val === '()') {
+        // 괄호 자동 처리
+        var openCount = (state.calcExpression.match(/\(/g) || []).length;
+        var closeCount = (state.calcExpression.match(/\)/g) || []).length;
+        var lastChar = state.calcExpression.slice(-1);
+        if (openCount > closeCount && lastChar !== '(' && !isOperator(lastChar)) {
+          state.calcExpression += ')';
+        } else {
+          state.calcExpression += '(';
+        }
+      } else if (val === '%') {
+        state.calcExpression += '%';
+      } else if (val === '.') {
+        // 소수점 처리
+        var parts = state.calcExpression.split(/[\+\-\×\÷]/);
+        var lastPart = parts[parts.length - 1];
+        if (!lastPart.includes('.')) {
+          state.calcExpression += val;
+        }
+      } else if (isOperator(val)) {
+        var lastChar = state.calcExpression.slice(-1);
+        if (state.calcExpression !== '' && !isOperator(lastChar) && lastChar !== '(') {
+          state.calcExpression += val;
+        } else if (isOperator(lastChar)) {
+          state.calcExpression = state.calcExpression.slice(0, -1) + val;
+        }
+      } else {
+        state.calcExpression += val;
+      }
+      updateCalculatorDisplay();
+    }
+
+    function isOperator(char) {
+      return ['+', '-', '×', '÷'].indexOf(char) !== -1;
+    }
+
+    function updateCalculatorDisplay() {
+      var display = document.getElementById('calc-display');
+      if (display) {
+        if (state.calcExpression === '') {
+          display.textContent = '0';
+        } else {
+          display.textContent = formatCalcExpression(state.calcExpression);
+        }
+      }
+    }
+
+    function formatCalcExpression(expr) {
+      // 숫자 부분에 천단위 구분자 추가
+      return expr.replace(/(\d+)/g, function(match) {
+        return parseInt(match, 10).toLocaleString();
+      });
+    }
+
+    function calculateResult() {
+      try {
+        var expr = state.calcExpression;
+        // 연산자 변환
+        expr = expr.replace(/×/g, '*').replace(/÷/g, '/');
+        // 퍼센트 처리
+        expr = expr.replace(/(\d+)%/g, '($1/100)');
+        
+        // 계산 (안전한 eval 대안)
+        var result = Function('"use strict"; return (' + expr + ')')();
+        
+        if (isNaN(result) || !isFinite(result)) {
+          showToast('계산 오류', 'error');
+          return;
+        }
+        
+        state.calcValue = Math.round(result);
+        state.calcExpression = String(state.calcValue);
+        updateCalculatorDisplay();
+      } catch (e) {
+        showToast('잘못된 수식입니다', 'error');
+      }
+    }
+
+    function submitCalculator() {
+      // 수식이 있으면 먼저 계산
+      if (state.calcExpression && state.calcExpression.match(/[\+\-\×\÷]/)) {
+        calculateResult();
+      }
+      
+      var value = parseInt(state.calcExpression.replace(/[^\d\-]/g, ''), 10) || 0;
+      value = Math.abs(value); // 절대값 사용
+      
+      // 대상 input에 값 설정
+      if (state.calcTargetId) {
+        var targetInput = document.getElementById(state.calcTargetId);
+        if (targetInput) {
+          targetInput.value = value > 0 ? value.toLocaleString() : '';
+          // input 이벤트 트리거
+          var event = new Event('input', { bubbles: true });
+          targetInput.dispatchEvent(event);
+        }
+      }
+      
+      // 콜백 실행
+      if (state.calcCallback && typeof state.calcCallback === 'function') {
+        state.calcCallback(value);
+      }
+      
+      closeCalculator();
+    }
+
+    function renderCalculatorModal() {
+      var existing = document.getElementById('calculator-modal');
+      if (existing) existing.remove();
+
+      var displayValue = state.calcExpression === '' ? '0' : formatCalcExpression(state.calcExpression);
+
+      var modalHtml = '<div id="calculator-modal" class="fixed inset-0 bg-black bg-opacity-50 flex flex-col justify-end z-[100]" onclick="if(event.target===this)closeCalculator()">' +
+        '<div class="bg-white w-full max-w-md mx-auto rounded-t-2xl numpad-modal">' +
+          '<div class="flex justify-between items-center p-3 border-b bg-gray-700 rounded-t-2xl">' +
+            '<span class="text-white font-bold text-base">' + state.calcTitle + '</span>' +
+            '<button onclick="closeCalculator()" class="text-white text-2xl leading-none">&times;</button>' +
+          '</div>' +
+          '<div class="bg-white border-b">' +
+            '<div id="calc-display" class="calc-display">' + displayValue + '</div>' +
+          '</div>' +
+          '<div class="flex items-center justify-between px-3 py-2 border-b bg-gray-100">' +
+            '<button onclick="openGlobalSearch()" class="w-10 h-10 flex items-center justify-center text-gray-600">' +
+              '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>' +
+            '</button>' +
+            '<button onclick="calcInput(\'DEL\')" class="w-10 h-10 flex items-center justify-center bg-gray-300 rounded-lg">' +
+              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>' +
+            '</button>' +
+          '</div>' +
+          '<div class="grid grid-cols-4 gap-0">' +
+            '<button onclick="calcInput(\'C\')" class="calc-btn h-14 text-xl font-bold">C</button>' +
+            '<button onclick="calcInput(\'()\')" class="calc-btn h-14 text-xl">( )</button>' +
+            '<button onclick="calcInput(\'%\')" class="calc-btn h-14 text-xl">%</button>' +
+            '<button onclick="calcInput(\'÷\')" class="calc-btn calc-btn-op h-14">÷</button>' +
+            '<button onclick="calcInput(\'7\')" class="calc-btn h-14">7</button>' +
+            '<button onclick="calcInput(\'8\')" class="calc-btn h-14">8</button>' +
+            '<button onclick="calcInput(\'9\')" class="calc-btn h-14">9</button>' +
+            '<button onclick="calcInput(\'×\')" class="calc-btn calc-btn-op h-14">×</button>' +
+            '<button onclick="calcInput(\'4\')" class="calc-btn h-14">4</button>' +
+            '<button onclick="calcInput(\'5\')" class="calc-btn h-14">5</button>' +
+            '<button onclick="calcInput(\'6\')" class="calc-btn h-14">6</button>' +
+            '<button onclick="calcInput(\'-\')" class="calc-btn calc-btn-op h-14">−</button>' +
+            '<button onclick="calcInput(\'1\')" class="calc-btn h-14">1</button>' +
+            '<button onclick="calcInput(\'2\')" class="calc-btn h-14">2</button>' +
+            '<button onclick="calcInput(\'3\')" class="calc-btn h-14">3</button>' +
+            '<button onclick="calcInput(\'+\')" class="calc-btn calc-btn-op h-14">+</button>' +
+            '<button onclick="calcInput(\'0\')" class="calc-btn h-14">0</button>' +
+            '<button onclick="calcInput(\'00\')" class="calc-btn h-14">00</button>' +
+            '<button onclick="calcInput(\'.\') " class="calc-btn h-14">.</button>' +
+            '<button onclick="submitCalculator()" class="calc-btn calc-btn-equal h-14">=</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function openGlobalSearch() {
+      showToast('글로벌 검색 기능은 준비 중입니다');
+    }
+
+    // ============================================
+    // 금액 입력 필드에 모달 연동
+    // ============================================
+    function initAmountInputs() {
+      // 모든 금액 입력 필드에 클릭 이벤트 추가
+      var amountInputs = document.querySelectorAll('[data-amount-input]');
+      amountInputs.forEach(function(input) {
+        input.addEventListener('click', function(e) {
+          e.preventDefault();
+          var title = this.getAttribute('data-amount-title') || '금액 입력';
+          var currentValue = this.value.replace(/[^\d]/g, '');
+          openNumpad(this.id, title, currentValue);
+        });
+        input.setAttribute('readonly', 'true');
+        input.style.cursor = 'pointer';
+      });
+    }
+
+    // 금액 입력 필드 클릭 핸들러 (직접 호출용)
+    function handleAmountClick(inputId, title) {
+      var input = document.getElementById(inputId);
+      if (input) {
+        var currentValue = input.value.replace(/[^\d]/g, '');
+        openNumpad(inputId, title || '금액 입력', currentValue);
+      }
     }
 
     // Utility functions
@@ -1858,22 +2310,66 @@
       var tx = state.transactions.find(function(t) { return t.id === id; });
       if (!tx) return;
       
-      var newAmount = prompt('금액:', tx.amount);
-      if (newAmount === null) return;
-      
-      var newCategory = prompt('카테고리:', tx.category);
-      if (newCategory === null) return;
-      
-      var newMemo = prompt('메모:', tx.memo || '');
-      if (newMemo === null) return;
-      
-      tx.amount = Number(newAmount) || tx.amount;
+      // 거래 수정용 모달 표시
+      state.editingTransactionId = id;
+      renderEditTransactionModal(tx);
+    }
+
+    function renderEditTransactionModal(tx) {
+      var existing = document.getElementById('edit-transaction-modal');
+      if (existing) existing.remove();
+
+      var categories = tx.type === 'income' ? state.categories.income : state.categories.expense;
+      var categoryOptions = categories.map(function(c) {
+        return '<option value="' + c + '"' + (c === tx.category ? ' selected' : '') + '>' + c + '</option>';
+      }).join('');
+
+      var modalHtml = '<div id="edit-transaction-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onclick="if(event.target===this)closeEditTransactionModal()">' +
+        '<div class="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">' +
+          '<div class="p-4 border-b"><h2 class="text-xl font-bold">거래 수정</h2></div>' +
+          '<div class="p-4 space-y-4">' +
+            '<div><label class="block text-sm font-medium mb-1">금액</label>' +
+              '<input type="text" id="editTxAmount" value="' + tx.amount.toLocaleString() + '" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" readonly onclick="handleAmountClick(\'editTxAmount\', \'금액 수정\')">' +
+            '</div>' +
+            '<div><label class="block text-sm font-medium mb-1">카테고리</label>' +
+              '<select id="editTxCategory" class="w-full p-2 border rounded-lg">' + categoryOptions + '</select>' +
+            '</div>' +
+            '<div><label class="block text-sm font-medium mb-1">메모</label>' +
+              '<input type="text" id="editTxMemo" value="' + (tx.memo || '') + '" class="w-full p-2 border rounded-lg" placeholder="메모 입력">' +
+            '</div>' +
+            '<div class="flex gap-2 pt-4">' +
+              '<button onclick="saveEditTransaction()" class="flex-1 bg-blue-500 text-white py-3 rounded-lg font-medium">저장</button>' +
+              '<button onclick="closeEditTransactionModal()" class="flex-1 bg-gray-300 py-3 rounded-lg font-medium">취소</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function saveEditTransaction() {
+      var tx = state.transactions.find(function(t) { return t.id === state.editingTransactionId; });
+      if (!tx) return;
+
+      var newAmount = getAmountValue('editTxAmount');
+      var newCategory = document.getElementById('editTxCategory').value;
+      var newMemo = document.getElementById('editTxMemo').value;
+
+      tx.amount = newAmount || tx.amount;
       tx.category = newCategory || tx.category;
       tx.memo = newMemo;
-      
+
       saveData();
+      closeEditTransactionModal();
       updateHistoryList();
       showToast('거래가 수정되었습니다');
+    }
+
+    function closeEditTransactionModal() {
+      state.editingTransactionId = null;
+      var modal = document.getElementById('edit-transaction-modal');
+      if (modal) modal.remove();
     }
 
     // Stats Screen
@@ -2622,13 +3118,13 @@
           '<h3 class="font-bold mb-4">🎯 수입 목표</h3>' +
           '<div class="space-y-3">' +
             '<div><label class="block text-sm font-medium mb-1 text-purple-700">👑 7년 목표</label>' +
-              '<input type="text" id="goal-year7" value="' + (state.goals.year7 ? Number(state.goals.year7).toLocaleString() : '') + '" class="w-full p-2 border rounded-lg" placeholder="금액 입력" oninput="formatAmountInput(this)"></div>' +
+              '<input type="text" id="goal-year7" value="' + (state.goals.year7 ? Number(state.goals.year7).toLocaleString() : '') + '" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" placeholder="금액 클릭" readonly onclick="handleAmountClick(\'goal-year7\', \'7년 목표 금액\')"></div>' +
             '<div><label class="block text-sm font-medium mb-1 text-blue-700">💎 5년 목표</label>' +
-              '<input type="text" id="goal-year5" value="' + (state.goals.year5 ? Number(state.goals.year5).toLocaleString() : '') + '" class="w-full p-2 border rounded-lg" placeholder="금액 입력" oninput="formatAmountInput(this)"></div>' +
+              '<input type="text" id="goal-year5" value="' + (state.goals.year5 ? Number(state.goals.year5).toLocaleString() : '') + '" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" placeholder="금액 클릭" readonly onclick="handleAmountClick(\'goal-year5\', \'5년 목표 금액\')"></div>' +
             '<div><label class="block text-sm font-medium mb-1 text-green-700">🏆 3년 목표</label>' +
-              '<input type="text" id="goal-year3" value="' + (state.goals.year3 ? Number(state.goals.year3).toLocaleString() : '') + '" class="w-full p-2 border rounded-lg" placeholder="금액 입력" oninput="formatAmountInput(this)"></div>' +
+              '<input type="text" id="goal-year3" value="' + (state.goals.year3 ? Number(state.goals.year3).toLocaleString() : '') + '" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" placeholder="금액 클릭" readonly onclick="handleAmountClick(\'goal-year3\', \'3년 목표 금액\')"></div>' +
             '<div><label class="block text-sm font-medium mb-1 text-yellow-700">⭐ 올해 목표</label>' +
-              '<input type="text" id="goal-thisYear" value="' + (state.goals.thisYear ? Number(state.goals.thisYear).toLocaleString() : '') + '" class="w-full p-2 border rounded-lg" placeholder="금액 입력" oninput="formatAmountInput(this)"></div>' +
+              '<input type="text" id="goal-thisYear" value="' + (state.goals.thisYear ? Number(state.goals.thisYear).toLocaleString() : '') + '" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" placeholder="금액 클릭" readonly onclick="handleAmountClick(\'goal-thisYear\', \'올해 목표 금액\')"></div>' +
             '<button onclick="saveGoals()" class="w-full bg-blue-500 text-white py-2 rounded-lg font-medium">목표 저장</button>' +
           '</div>' +
         '</div>' +
@@ -2641,7 +3137,7 @@
           '<div class="space-y-2 mb-4">' + bankListHtml + '</div>' +
           '<div class="space-y-2">' +
             '<input type="text" id="newBankName" class="w-full p-2 border rounded-lg" placeholder="은행명">' +
-            '<input type="text" id="newBankBalance" class="w-full p-2 border rounded-lg" placeholder="잔고" oninput="formatAmountInput(this)">' +
+            '<input type="text" id="newBankBalance" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" placeholder="잔고 클릭" readonly onclick="handleAmountClick(\'newBankBalance\', \'은행 잔고\')">' +
             '<button onclick="addBank()" class="w-full bg-green-500 text-white py-2 rounded-lg">은행 추가</button>' +
           '</div>' +
         '</div>' +
@@ -2678,24 +3174,55 @@
       var bank = state.bankBalances.find(function(b) { return b.id === id; });
       if (!bank) return;
       
-      var newName = prompt('은행명:', bank.name);
-      if (newName === null) return;
-      
-      var newBalanceStr = prompt('잔고:', bank.balance.toLocaleString());
-      if (newBalanceStr === null) return;
-      
-      var newBalance = parseInt(newBalanceStr.replace(/[^\d]/g, ''), 10);
-      if (isNaN(newBalance) || newBalance < 0) {
-        alert('올바른 금액을 입력해주세요');
-        return;
-      }
-      
-      bank.name = newName.trim() || bank.name;
+      state.editingBankId = id;
+      renderEditBankModal(bank);
+    }
+
+    function renderEditBankModal(bank) {
+      var existing = document.getElementById('edit-bank-modal');
+      if (existing) existing.remove();
+
+      var modalHtml = '<div id="edit-bank-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onclick="if(event.target===this)closeEditBankModal()">' +
+        '<div class="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">' +
+          '<div class="p-4 border-b bg-blue-50"><h2 class="text-xl font-bold text-blue-700">은행 수정</h2></div>' +
+          '<div class="p-4 space-y-4">' +
+            '<div><label class="block text-sm font-medium mb-1">은행명</label>' +
+              '<input type="text" id="editBankName" value="' + bank.name + '" class="w-full p-2 border rounded-lg" placeholder="은행명">' +
+            '</div>' +
+            '<div><label class="block text-sm font-medium mb-1">잔고</label>' +
+              '<input type="text" id="editBankBalance" value="' + bank.balance.toLocaleString() + '" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" readonly onclick="handleAmountClick(\'editBankBalance\', \'은행 잔고\')">' +
+            '</div>' +
+            '<div class="flex gap-2 pt-4">' +
+              '<button onclick="saveEditBank()" class="flex-1 bg-blue-500 text-white py-3 rounded-lg font-medium">저장</button>' +
+              '<button onclick="closeEditBankModal()" class="flex-1 bg-gray-300 py-3 rounded-lg font-medium">취소</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function saveEditBank() {
+      var bank = state.bankBalances.find(function(b) { return b.id === state.editingBankId; });
+      if (!bank) return;
+
+      var newName = document.getElementById('editBankName').value.trim();
+      var newBalance = getAmountValue('editBankBalance');
+
+      bank.name = newName || bank.name;
       bank.balance = newBalance;
-      
+
       saveData();
+      closeEditBankModal();
       render();
       showToast('은행 정보가 수정되었습니다');
+    }
+
+    function closeEditBankModal() {
+      state.editingBankId = null;
+      var modal = document.getElementById('edit-bank-modal');
+      if (modal) modal.remove();
     }
 
     function deleteBank(id) {
@@ -3481,12 +4008,17 @@
     function editInvestmentPrice(id) {
       var inv = state.investments.find(function(i) { return i.id === id; });
       if (!inv) return;
-      var newPrice = prompt('현재가를 입력하세요:', inv.currentPrice);
-      if (newPrice === null) return;
-      inv.currentPrice = Number(newPrice) || inv.currentPrice;
-      saveData();
-      render();
-      showToast('현재가가 수정되었습니다');
+      
+      openNumpad('investPriceTemp', inv.name + ' 현재가', inv.currentPrice, function(value) {
+        if (value <= 0) {
+          showToast('올바른 금액을 입력해주세요', 'error');
+          return;
+        }
+        inv.currentPrice = value;
+        saveData();
+        render();
+        showToast('현재가가 수정되었습니다');
+      });
     }
 
     function deleteInvestment(id) {
@@ -3606,12 +4138,12 @@
       var lenderTypeEl = document.getElementById('loanLenderType');
 
       var name = nameEl ? nameEl.value.trim() : '';
-      var amount = Number(amountEl ? amountEl.value : 0);
+      var amount = getAmountValue('loanAmount');
       var loanDate = loanDateEl ? loanDateEl.value : '';
       var repayDate = repayDateEl ? repayDateEl.value : '';
       var rate = Number(rateEl ? rateEl.value : 0);
       var rateType = rateTypeEl ? rateTypeEl.value : 'fixed';
-      var monthly = Number(monthlyEl ? monthlyEl.value : 0);
+      var monthly = getAmountValue('loanMonthlyPayment');
       var payDay = Number(payDayEl ? payDayEl.value : 1);
       var lenderType = lenderTypeEl ? lenderTypeEl.value : 'bank';
 
@@ -3650,21 +4182,55 @@
       var loan = state.loans.find(function(l) { return l.id === id; });
       if (!loan) return;
 
-      var newAmountStr = prompt('대출 잔액:', loan.amount.toLocaleString());
-      if (newAmountStr === null) return;
-      
-      var newMonthlyStr = prompt('월 상환금:', loan.monthlyPayment.toLocaleString());
-      if (newMonthlyStr === null) return;
+      state.editingLoanId = id;
+      renderEditLoanModal(loan);
+    }
 
-      var newAmount = parseInt(newAmountStr.replace(/[^\d]/g, ''), 10);
-      var newMonthly = parseInt(newMonthlyStr.replace(/[^\d]/g, ''), 10);
+    function renderEditLoanModal(loan) {
+      var existing = document.getElementById('edit-loan-modal');
+      if (existing) existing.remove();
 
-      loan.amount = isNaN(newAmount) ? loan.amount : newAmount;
-      loan.monthlyPayment = isNaN(newMonthly) ? loan.monthlyPayment : newMonthly;
+      var modalHtml = '<div id="edit-loan-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onclick="if(event.target===this)closeEditLoanModal()">' +
+        '<div class="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">' +
+          '<div class="p-4 border-b bg-orange-50"><h2 class="text-xl font-bold text-orange-700">대출 수정</h2></div>' +
+          '<div class="p-4 space-y-4">' +
+            '<div><label class="block text-sm font-medium mb-1">대출 잔액</label>' +
+              '<input type="text" id="editLoanAmount" value="' + loan.amount.toLocaleString() + '" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" readonly onclick="handleAmountClick(\'editLoanAmount\', \'대출 잔액\')">' +
+            '</div>' +
+            '<div><label class="block text-sm font-medium mb-1">월 상환금</label>' +
+              '<input type="text" id="editLoanMonthly" value="' + (loan.monthlyPayment || 0).toLocaleString() + '" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" readonly onclick="handleAmountClick(\'editLoanMonthly\', \'월 상환금\')">' +
+            '</div>' +
+            '<div class="flex gap-2 pt-4">' +
+              '<button onclick="saveEditLoan()" class="flex-1 bg-orange-500 text-white py-3 rounded-lg font-medium">저장</button>' +
+              '<button onclick="closeEditLoanModal()" class="flex-1 bg-gray-300 py-3 rounded-lg font-medium">취소</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function saveEditLoan() {
+      var loan = state.loans.find(function(l) { return l.id === state.editingLoanId; });
+      if (!loan) return;
+
+      var newAmount = getAmountValue('editLoanAmount');
+      var newMonthly = getAmountValue('editLoanMonthly');
+
+      loan.amount = newAmount || loan.amount;
+      loan.monthlyPayment = newMonthly;
 
       saveData();
+      closeEditLoanModal();
       render();
       showToast('대출 정보가 수정되었습니다');
+    }
+
+    function closeEditLoanModal() {
+      state.editingLoanId = null;
+      var modal = document.getElementById('edit-loan-modal');
+      if (modal) modal.remove();
     }
 
     function calculateLoanInterest(amount, rate, months) {
@@ -3898,11 +4464,11 @@
             '<div class="grid grid-cols-2 gap-2">' +
               '<div>' +
                 '<label class="block text-xs text-gray-600 mb-1">대출금</label>' +
-                '<input type="number" id="loanAmount" class="w-full p-2 border rounded-lg text-sm" placeholder="0">' +
+                '<input type="text" id="loanAmount" class="w-full p-2 border rounded-lg text-sm bg-gray-50 cursor-pointer" placeholder="금액 클릭" readonly onclick="handleAmountClick(\'loanAmount\', \'대출금\')">' +
               '</div>' +
               '<div>' +
                 '<label class="block text-xs text-gray-600 mb-1">월 상환금</label>' +
-                '<input type="number" id="loanMonthlyPayment" class="w-full p-2 border rounded-lg text-sm" placeholder="0">' +
+                '<input type="text" id="loanMonthlyPayment" class="w-full p-2 border rounded-lg text-sm bg-gray-50 cursor-pointer" placeholder="금액 클릭" readonly onclick="handleAmountClick(\'loanMonthlyPayment\', \'월 상환금\')">' +
               '</div>' +
             '</div>' +
             '<div class="grid grid-cols-2 gap-2">' +
@@ -4395,21 +4961,22 @@
 
     function editInitialBudget() {
       var currentBudget = state.exchangeTab === 'USD' ? state.usdInitialBudget : state.jpyInitialBudget;
-      var newBudget = prompt('초기예산을 입력하세요 (원):', currentBudget);
-      if (newBudget === null) return;
-      var budget = parseInt(newBudget);
-      if (isNaN(budget) || budget <= 0) { 
-        alert('올바른 금액을 입력해주세요'); 
-        return; 
-      }
-      if (state.exchangeTab === 'USD') {
-        state.usdInitialBudget = budget;
-      } else {
-        state.jpyInitialBudget = budget;
-      }
-      saveData();
-      render();
-      showToast('초기예산이 수정되었습니다');
+      var currencyName = state.exchangeTab === 'USD' ? '달러' : '엔화';
+      
+      openNumpad('initialBudgetTemp', currencyName + ' 초기예산', currentBudget, function(value) {
+        if (value <= 0) { 
+          showToast('올바른 금액을 입력해주세요', 'error'); 
+          return; 
+        }
+        if (state.exchangeTab === 'USD') {
+          state.usdInitialBudget = value;
+        } else {
+          state.jpyInitialBudget = value;
+        }
+        saveData();
+        render();
+        showToast('초기예산이 수정되었습니다');
+      });
     }
 
     // Add Transaction Modal
@@ -4429,7 +4996,7 @@
             '</div>' +
             '<div id="regular-expense-form">' +
               '<div class="mb-4"><label class="block text-sm font-medium mb-1">날짜</label><input type="date" id="txDate" value="' + new Date().toISOString().split('T')[0] + '" class="w-full p-2 border rounded-lg"></div>' +
-              '<div class="mb-4"><label class="block text-sm font-medium mb-1">금액</label><input type="text" id="txAmount" class="w-full p-2 border rounded-lg" placeholder="금액 입력" oninput="formatAmountInput(this);updateInstallmentInfo()"></div>' +
+              '<div class="mb-4"><label class="block text-sm font-medium mb-1">금액</label><input type="text" id="txAmount" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" placeholder="금액을 클릭하여 입력" readonly onclick="handleAmountClick(\'txAmount\', \'지출금액\')" oninput="updateInstallmentInfo()"></div>' +
             '</div>' +
             '<div id="fixed-expense-form" class="hidden space-y-3">' +
               '<div class="grid grid-cols-2 gap-2">' +
@@ -4440,7 +5007,7 @@
                 '<div><label class="block text-sm font-medium mb-1">매월 출금일</label><select id="fePayDay" class="w-full p-2 border rounded-lg">' +
                   Array.from({length: 28}, function(_, i) { return '<option value="' + (i + 1) + '">' + (i + 1) + '일</option>'; }).join('') +
                 '</select></div>' +
-                '<div><label class="block text-sm font-medium mb-1">매월 금액</label><input type="text" id="feAmount" class="w-full p-2 border rounded-lg" placeholder="금액" oninput="formatAmountInput(this)"></div>' +
+                '<div><label class="block text-sm font-medium mb-1">매월 금액</label><input type="text" id="feAmount" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" placeholder="금액 클릭" readonly onclick="handleAmountClick(\'feAmount\', \'매월 금액\')"></div>' +
               '</div>' +
               '<div><label class="block text-sm font-medium mb-1">결제수단</label><select id="fePaymentMethod" class="w-full p-2 border rounded-lg"><option value="card">카드</option><option value="cash">현금</option><option value="other">기타지불</option></select></div>' +
               '<div><label class="block text-sm font-medium mb-1">카테고리</label><select id="feCategory" class="w-full p-2 border rounded-lg">' +
@@ -4540,18 +5107,55 @@
       var fe = state.fixedExpenses.find(function(f) { return f.id === id; });
       if (!fe) return;
       
-      var newAmount = prompt('매월 금액:', fe.amount.toLocaleString());
-      if (newAmount === null) return;
-      
-      var newEndDate = prompt('종료날짜 (YYYY-MM-DD, 비워두면 무기한):', fe.endDate || '');
-      if (newEndDate === null) return;
-      
-      fe.amount = parseInt(newAmount.replace(/[^\d]/g, ''), 10) || fe.amount;
+      state.editingFixedExpenseId = id;
+      renderEditFixedExpenseModal(fe);
+    }
+
+    function renderEditFixedExpenseModal(fe) {
+      var existing = document.getElementById('edit-fixed-expense-modal');
+      if (existing) existing.remove();
+
+      var modalHtml = '<div id="edit-fixed-expense-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onclick="if(event.target===this)closeEditFixedExpenseModal()">' +
+        '<div class="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">' +
+          '<div class="p-4 border-b bg-purple-50"><h2 class="text-xl font-bold text-purple-700">고정비 수정</h2></div>' +
+          '<div class="p-4 space-y-4">' +
+            '<div><label class="block text-sm font-medium mb-1">매월 금액</label>' +
+              '<input type="text" id="editFeAmount" value="' + fe.amount.toLocaleString() + '" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" readonly onclick="handleAmountClick(\'editFeAmount\', \'매월 금액\')">' +
+            '</div>' +
+            '<div><label class="block text-sm font-medium mb-1">종료날짜 (비워두면 무기한)</label>' +
+              '<input type="date" id="editFeEndDate" value="' + (fe.endDate || '') + '" class="w-full p-2 border rounded-lg">' +
+            '</div>' +
+            '<div class="flex gap-2 pt-4">' +
+              '<button onclick="saveEditFixedExpense()" class="flex-1 bg-purple-500 text-white py-3 rounded-lg font-medium">저장</button>' +
+              '<button onclick="closeEditFixedExpenseModal()" class="flex-1 bg-gray-300 py-3 rounded-lg font-medium">취소</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function saveEditFixedExpense() {
+      var fe = state.fixedExpenses.find(function(f) { return f.id === state.editingFixedExpenseId; });
+      if (!fe) return;
+
+      var newAmount = getAmountValue('editFeAmount');
+      var newEndDate = document.getElementById('editFeEndDate').value;
+
+      fe.amount = newAmount || fe.amount;
       fe.endDate = newEndDate || null;
-      
+
       saveData();
+      closeEditFixedExpenseModal();
       render();
       showToast('고정비가 수정되었습니다');
+    }
+
+    function closeEditFixedExpenseModal() {
+      state.editingFixedExpenseId = null;
+      var modal = document.getElementById('edit-fixed-expense-modal');
+      if (modal) modal.remove();
     }
 
     function deleteFixedExpense(id) {
@@ -4769,7 +5373,7 @@
             '<div>' +
               '<label class="block text-sm font-medium mb-1 text-gray-700">배당금</label>' +
               '<div class="relative">' +
-                '<input type="text" id="divAmount" class="w-full p-3 pr-12 border rounded-lg" placeholder="0" oninput="formatAmountInput(this)">' +
+                '<input type="text" id="divAmount" class="w-full p-3 pr-12 border rounded-lg bg-gray-50 cursor-pointer" placeholder="금액 클릭" readonly onclick="handleAmountClick(\'divAmount\', \'배당금\')">' +
                 '<span class="absolute right-3 top-3 text-gray-500">원</span>' +
               '</div>' +
             '</div>' +
@@ -4807,9 +5411,9 @@
           '<div class="p-4 space-y-4">' +
             '<div><label class="block text-sm font-medium mb-1">종목명</label><input type="text" id="invName" class="w-full p-2 border rounded-lg" placeholder="예: 삼성전자"></div>' +
             '<div><label class="block text-sm font-medium mb-1">투자 유형</label><select id="invType" class="w-full p-2 border rounded-lg"><option value="stock">📊 주식</option><option value="etf">📦 ETF</option><option value="fund">💼 펀드</option><option value="crypto">🪙 암호화폐</option><option value="gold">🥇 금</option><option value="realestate">🏠 부동산</option><option value="bond">📃 채권</option><option value="other">📄 기타</option></select></div>' +
-            '<div><label class="block text-sm font-medium mb-1">보유 수량</label><input type="text" id="invQuantity" class="w-full p-2 border rounded-lg" placeholder="0 (소수점 가능)" oninput="formatQuantityInput(this)"></div>' +
-            '<div><label class="block text-sm font-medium mb-1">매입가 (1주당)</label><input type="text" id="invBuyPrice" class="w-full p-2 border rounded-lg" placeholder="0" oninput="formatAmountInput(this)"></div>' +
-            '<div><label class="block text-sm font-medium mb-1">현재가 (1주당)</label><input type="text" id="invCurrentPrice" class="w-full p-2 border rounded-lg" placeholder="매입가와 동일시 비워두세요" oninput="formatAmountInput(this)"></div>' +
+            '<div><label class="block text-sm font-medium mb-1">보유 수량</label><input type="text" id="invQuantity" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" placeholder="수량 클릭" readonly onclick="handleAmountClick(\'invQuantity\', \'보유 수량\')"></div>' +
+            '<div><label class="block text-sm font-medium mb-1">매입가 (1주당)</label><input type="text" id="invBuyPrice" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" placeholder="금액 클릭" readonly onclick="handleAmountClick(\'invBuyPrice\', \'매입가\')"></div>' +
+            '<div><label class="block text-sm font-medium mb-1">현재가 (1주당)</label><input type="text" id="invCurrentPrice" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" placeholder="금액 클릭 (비워두면 매입가)" readonly onclick="handleAmountClick(\'invCurrentPrice\', \'현재가\')"></div>' +
             '<div class="flex gap-2 pt-4">' +
               '<button onclick="addInvestment()" class="flex-1 bg-indigo-500 text-white py-3 rounded-lg font-medium">추가</button>' +
               '<button onclick="state.showAddInvestment=false;render()" class="flex-1 bg-gray-300 py-3 rounded-lg font-medium">취소</button>' +
