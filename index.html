@@ -166,6 +166,53 @@
       align-items: center;
       justify-content: flex-end;
     }
+    
+    /* 사이드 메뉴 스타일 */
+    @keyframes slideInFromLeft {
+      from { transform: translateX(-100%); }
+      to { transform: translateX(0); }
+    }
+    @keyframes slideOutToLeft {
+      from { transform: translateX(0); }
+      to { transform: translateX(-100%); }
+    }
+    @keyframes fadeInOverlay {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .side-menu-overlay {
+      animation: fadeInOverlay 0.3s ease-out;
+    }
+    .side-menu-panel {
+      animation: slideInFromLeft 0.3s ease-out;
+    }
+    .side-menu-panel.closing {
+      animation: slideOutToLeft 0.3s ease-out;
+    }
+    .hamburger-btn {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    .hamburger-btn:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    .hamburger-btn span {
+      display: block;
+      width: 18px;
+      height: 2px;
+      background: white;
+      border-radius: 1px;
+      margin: 2px 0;
+      transition: all 0.3s;
+    }
   </style>
 </head>
 <body class="bg-gray-50">
@@ -221,6 +268,7 @@
       showNumpad: false,
       numpadTargetId: null,
       numpadValue: '',
+      showSideMenu: false,
       numpadTitle: '금액 입력',
       numpadCallback: null,
       // 계산기 모달 상태
@@ -229,7 +277,14 @@
       calcValue: '',
       calcExpression: '',
       calcTitle: '계산기',
-      calcCallback: null
+      calcCallback: null,
+      // 프로필 관련 상태
+      showProfile: false,
+      profile: {
+        nickname: '',
+        age: '',
+        gender: ''
+      }
     };
 
     // Flutter WebView Bridge Communication
@@ -768,6 +823,7 @@
         state.usdInitialBudget = exchangeData.usdInitialBudget || 10000000;
         state.jpyInitialBudget = exchangeData.jpyInitialBudget || 10000000;
       }
+      state.profile = storage.get('profile') || { nickname: '', age: '', gender: '' };
       state.isLoading = false;
       
       // Check for automatic installment payments
@@ -805,6 +861,7 @@
         usdInitialBudget: state.usdInitialBudget,
         jpyInitialBudget: state.jpyInitialBudget
       });
+      storage.set('profile', state.profile);
     }
 
     // Toast notification
@@ -1601,9 +1658,16 @@
       
       return '<div class="bg-gradient-to-r ' + rankInfo.headerGradient + ' text-white p-4 sticky top-0 z-10 shadow-lg">' +
         '<div class="flex justify-between items-center">' +
-          '<h1 class="text-xl font-bold">절대강자 가계부</h1>' +
           '<div class="flex items-center gap-2">' +
-            '<button onclick="state.showIframeModal=true;render()" class="bg-white bg-opacity-90 text-gray-700 px-3 py-1 rounded-full text-sm font-bold hover:bg-opacity-100 transition shadow-md">계산</button>' +
+            '<div class="hamburger-btn" onclick="state.showSideMenu=true;render()">' +
+              '<span></span>' +
+              '<span></span>' +
+              '<span></span>' +
+            '</div>' +
+            '<h1 class="text-base font-bold">절대강자 가계부</h1>' +
+          '</div>' +
+          '<div class="flex items-center gap-1">' +
+            '<button onclick="state.showIframeModal=true;render()" class="bg-white bg-opacity-90 text-gray-700 px-2 py-1 rounded-full text-xs font-bold hover:bg-opacity-100 transition shadow-md">계산</button>' +
             '<button onclick="state.showSettings=true;render()" class="bg-white bg-opacity-90 text-gray-700 p-2 rounded-full hover:bg-opacity-100 transition shadow-md">' +
               '<i data-lucide="settings" class="w-4 h-4"></i>' +
             '</button>' +
@@ -5910,6 +5974,249 @@
     // Expose to window for Flutter access
     window.performResetAllData = performResetAllData;
 
+    // ========================
+    // 프로필 관련 함수들
+    // ========================
+    
+    // 프로필 모달 렌더링
+    function renderProfileModal() {
+      var ageOptions = ['10대', '20대', '30대', '40대', '50대', '60대', '70대', '80대', '90대'];
+      var ageOptionsHtml = '<option value="">나이대 선택</option>' + ageOptions.map(function(age) {
+        return '<option value="' + age + '"' + (state.profile.age === age ? ' selected' : '') + '>' + age + '</option>';
+      }).join('');
+      
+      return '<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onclick="if(event.target===this){state.showProfile=false;render();}">' +
+        '<div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">' +
+          // 헤더
+          '<div class="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">' +
+            '<div class="flex justify-between items-center">' +
+              '<h2 class="text-xl font-bold">👤 내 프로필</h2>' +
+              '<button onclick="state.showProfile=false;render()" class="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition">' +
+                '<i data-lucide="x" class="w-5 h-5"></i>' +
+              '</button>' +
+            '</div>' +
+            '<p class="text-sm text-white text-opacity-80 mt-2">프로필 정보를 입력해주세요</p>' +
+          '</div>' +
+          // 폼 내용
+          '<div class="p-6 space-y-5">' +
+            // 별명 입력
+            '<div>' +
+              '<label class="block text-sm font-medium text-gray-700 mb-2">별명 (최대 4자)</label>' +
+              '<input type="text" id="profile-nickname" maxlength="4" value="' + (state.profile.nickname || '') + '" ' +
+                'class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" ' +
+                'placeholder="별명을 입력하세요">' +
+            '</div>' +
+            // 나이 선택
+            '<div>' +
+              '<label class="block text-sm font-medium text-gray-700 mb-2">나이대</label>' +
+              '<select id="profile-age" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white">' +
+                ageOptionsHtml +
+              '</select>' +
+            '</div>' +
+            // 성별 선택
+            '<div>' +
+              '<label class="block text-sm font-medium text-gray-700 mb-2">성별</label>' +
+              '<div class="flex gap-3">' +
+                '<button onclick="selectGender(\'남자\')" id="gender-male" class="flex-1 py-3 rounded-xl border-2 transition flex items-center justify-center gap-2 ' + (state.profile.gender === '남자' ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-300 text-gray-600 hover:border-gray-400') + '">' +
+                  '<span class="text-xl">👨</span>' +
+                  '<span class="font-medium">남자</span>' +
+                '</button>' +
+                '<button onclick="selectGender(\'여자\')" id="gender-female" class="flex-1 py-3 rounded-xl border-2 transition flex items-center justify-center gap-2 ' + (state.profile.gender === '여자' ? 'border-pink-500 bg-pink-50 text-pink-600' : 'border-gray-300 text-gray-600 hover:border-gray-400') + '">' +
+                  '<span class="text-xl">👩</span>' +
+                  '<span class="font-medium">여자</span>' +
+                '</button>' +
+              '</div>' +
+            '</div>' +
+            // 구분선
+            '<hr class="border-gray-200">' +
+            // 구글 로그인 버튼
+            '<div>' +
+              '<button onclick="googleLogin()" class="w-full py-3 px-4 rounded-xl border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition flex items-center justify-center gap-3">' +
+                '<svg class="w-5 h-5" viewBox="0 0 24 24">' +
+                  '<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>' +
+                  '<path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>' +
+                  '<path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>' +
+                  '<path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>' +
+                '</svg>' +
+                '<span class="font-medium text-gray-700">Google 계정으로 로그인</span>' +
+              '</button>' +
+              '<p class="text-xs text-gray-500 text-center mt-2">데이터 동기화를 위해 로그인하세요</p>' +
+            '</div>' +
+          '</div>' +
+          // 저장 버튼
+          '<div class="p-4 border-t bg-gray-50">' +
+            '<button onclick="saveProfile()" class="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg transition">' +
+              '저장하기' +
+            '</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }
+    
+    // 성별 선택
+    function selectGender(gender) {
+      state.profile.gender = gender;
+      // UI 업데이트
+      var maleBtn = document.getElementById('gender-male');
+      var femaleBtn = document.getElementById('gender-female');
+      if (maleBtn) {
+        maleBtn.className = gender === '남자' 
+          ? 'flex-1 py-3 rounded-xl border-2 transition flex items-center justify-center gap-2 border-blue-500 bg-blue-50 text-blue-600'
+          : 'flex-1 py-3 rounded-xl border-2 transition flex items-center justify-center gap-2 border-gray-300 text-gray-600 hover:border-gray-400';
+      }
+      if (femaleBtn) {
+        femaleBtn.className = gender === '여자'
+          ? 'flex-1 py-3 rounded-xl border-2 transition flex items-center justify-center gap-2 border-pink-500 bg-pink-50 text-pink-600'
+          : 'flex-1 py-3 rounded-xl border-2 transition flex items-center justify-center gap-2 border-gray-300 text-gray-600 hover:border-gray-400';
+      }
+    }
+    
+    // 프로필 저장
+    function saveProfile() {
+      var nicknameEl = document.getElementById('profile-nickname');
+      var ageEl = document.getElementById('profile-age');
+      
+      var nickname = nicknameEl ? nicknameEl.value.trim() : '';
+      var age = ageEl ? ageEl.value : '';
+      
+      // 별명 검증 (최대 4자)
+      if (nickname.length > 4) {
+        showToast('별명은 최대 4자까지 입력 가능합니다');
+        return;
+      }
+      
+      state.profile.nickname = nickname;
+      state.profile.age = age;
+      
+      saveData();
+      state.showProfile = false;
+      render();
+      showToast('프로필이 저장되었습니다');
+    }
+    
+    // 구글 로그인 (Flutter WebView에서 호출 또는 웹에서 안내)
+    function googleLogin() {
+      if (FlutterBridge.isFlutterWebView()) {
+        FlutterBridge.postMessage('googleLogin', {});
+        showToast('구글 로그인을 요청했습니다');
+      } else {
+        showToast('앱에서만 구글 로그인이 가능합니다');
+      }
+    }
+    
+    // 사이드 메뉴 계산기 열기
+    function openSideMenuCalculator() {
+      state.showCalculator = true;
+      state.calcValue = '';
+      state.calcExpression = '';
+      state.calcTargetId = null;
+      state.calcTitle = '계산기';
+      state.calcCallback = null;
+      renderCalculatorModal();
+    }
+    
+    // 앱 별점주기
+    function openAppRating() {
+      if (FlutterBridge.isFlutterWebView()) {
+        FlutterBridge.postMessage('openAppRating', {});
+        showToast('앱 스토어로 이동합니다');
+      } else {
+        showToast('앱에서만 별점을 남길 수 있습니다');
+      }
+    }
+
+    // Render Side Menu
+    function renderSideMenu() {
+      var totalBankBalance = state.bankBalances.reduce(function(sum, b) { return sum + b.balance; }, 0);
+      var rankInfo = getRankInfo(totalBankBalance);
+      
+      var menuItems = [
+        { id: 'home', icon: 'home', label: '홈', desc: '자산 현황 및 요약' },
+        { id: 'history', icon: 'file-text', label: '내역', desc: '수입/지출 내역 관리' },
+        { id: 'stats', icon: 'bar-chart-3', label: '통계', desc: '월별/카테고리별 분석' },
+        { id: 'goal', icon: 'target', label: '목표', desc: '재무 목표 설정' },
+        { id: 'invest', icon: 'trending-up', label: '투자', desc: '투자 포트폴리오 관리' },
+        { id: 'exchange', icon: 'coins', label: '환전', desc: '외화 환전 관리' }
+      ];
+      
+      var menuItemsHtml = menuItems.map(function(item) {
+        var isActive = state.activeTab === item.id;
+        return '<div onclick="state.showSideMenu=false;setActiveTab(\'' + item.id + '\')" class="flex items-center gap-4 px-5 py-4 cursor-pointer transition-all hover:bg-gray-100 ' + (isActive ? 'bg-gradient-to-r ' + rankInfo.headerGradient + ' text-white' : '') + '">' +
+          '<div class="w-10 h-10 rounded-xl flex items-center justify-center ' + (isActive ? 'bg-white bg-opacity-20' : 'bg-gray-100') + '">' +
+            '<i data-lucide="' + item.icon + '" class="w-5 h-5 ' + (isActive ? 'text-white' : rankInfo.color) + '"></i>' +
+          '</div>' +
+          '<div>' +
+            '<div class="font-semibold ' + (isActive ? 'text-white' : 'text-gray-800') + '">' + item.label + '</div>' +
+            '<div class="text-xs ' + (isActive ? 'text-white text-opacity-80' : 'text-gray-500') + '">' + item.desc + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      
+      return '<div class="fixed inset-0 z-50 side-menu-overlay" onclick="if(event.target===this){state.showSideMenu=false;render();}">' +
+        '<div class="absolute inset-0"></div>' +
+        '<div class="side-menu-panel absolute left-0 top-0 bottom-0 w-[70%] max-w-xs bg-white shadow-2xl flex flex-col">' +
+          // 헤더
+          '<div class="bg-gradient-to-r ' + rankInfo.headerGradient + ' p-6">' +
+            '<div class="flex items-center gap-3 mb-4">' +
+              '<div class="w-14 h-14 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-3xl">' + rankInfo.icon + '</div>' +
+              '<div>' +
+                '<div class="text-white font-bold text-lg">' + rankInfo.rank + '</div>' +
+                '<div class="text-white text-opacity-80 text-sm">총통장잔고: ' + formatNumber(totalBankBalance) + '원</div>' +
+              '</div>' +
+            '</div>' +
+            '<button onclick="state.showSideMenu=false;render()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-white hover:bg-opacity-30 transition">' +
+              '<i data-lucide="x" class="w-5 h-5"></i>' +
+            '</button>' +
+          '</div>' +
+          // 메뉴 리스트
+          '<div class="flex-1 overflow-y-auto py-2">' +
+            '<button onclick="state.showSideMenu=false;state.showProfile=true;render()" class="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition">' +
+              '<div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">' +
+                '<i data-lucide="user" class="w-5 h-5"></i>' +
+              '</div>' +
+              '<span class="text-gray-700 font-medium">내 프로필</span>' +
+            '</button>' +
+            '<button onclick="state.showSideMenu=false;state.showSettings=true;render()" class="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition">' +
+              '<div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">' +
+                '<i data-lucide="settings" class="w-5 h-5"></i>' +
+              '</div>' +
+              '<span class="text-gray-700 font-medium">설정</span>' +
+            '</button>' +
+            '<button onclick="state.showSideMenu=false;openSideMenuCalculator()" class="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition">' +
+              '<div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">' +
+                '<i data-lucide="calculator" class="w-5 h-5"></i>' +
+              '</div>' +
+              '<span class="text-gray-700 font-medium">계산기</span>' +
+            '</button>' +
+            '<button onclick="state.showSideMenu=false;openAppRating()" class="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition">' +
+              '<div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">' +
+                '<i data-lucide="star" class="w-5 h-5"></i>' +
+              '</div>' +
+              '<span class="text-gray-700 font-medium">앱 별점주기</span>' +
+            '</button>' +
+            '<button onclick="state.showSideMenu=false;render()" class="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition">' +
+              '<div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">' +
+                '<i data-lucide="bell" class="w-5 h-5"></i>' +
+              '</div>' +
+              '<span class="text-gray-700 font-medium">알람</span>' +
+            '</button>' +
+            '<button onclick="state.showSideMenu=false;render()" class="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition">' +
+              '<div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">' +
+                '<i data-lucide="ban" class="w-5 h-5"></i>' +
+              '</div>' +
+              '<span class="text-gray-700 font-medium">광고 끄기</span>' +
+            '</button>' +
+            '<button onclick="state.showSideMenu=false;if(navigator.share){navigator.share({title:\'절대강자 가계부\',text:\'스마트한 자산관리 앱을 추천합니다!\',url:window.location.href});}else{alert(\'공유 기능을 지원하지 않는 브라우저입니다.\');}" class="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition">' +
+              '<div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">' +
+                '<i data-lucide="share-2" class="w-5 h-5"></i>' +
+              '</div>' +
+              '<span class="text-gray-700 font-medium">친구에게 공유하기</span>' +
+            '</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }
+
     // Render Navbar
     function renderNavbar() {
       // 등급 정보 가져오기
@@ -6007,7 +6314,7 @@
       // 모달이 열려있으면 스와이프 무시
       if (state.showAddTransaction || state.showCompoundCalc || state.showSettings || 
           state.showAddInvestment || state.showAddDividend || state.showAddJournal || 
-          state.showRankInfo || state.showIframeModal) return;
+          state.showRankInfo || state.showIframeModal || state.showSideMenu) return;
       
       touchStartX = e.changedTouches[0].screenX;
       touchStartY = e.changedTouches[0].screenY;
@@ -6017,7 +6324,7 @@
       // 모달이 열려있으면 스와이프 무시
       if (state.showAddTransaction || state.showCompoundCalc || state.showSettings || 
           state.showAddInvestment || state.showAddDividend || state.showAddJournal || 
-          state.showRankInfo || state.showIframeModal) return;
+          state.showRankInfo || state.showIframeModal || state.showSideMenu) return;
       
       touchEndX = e.changedTouches[0].screenX;
       touchEndY = e.changedTouches[0].screenY;
@@ -6055,6 +6362,8 @@
       if (state.showAddJournal) modals += renderAddJournalModal();
       if (state.showRankInfo) modals += renderRankInfoModal();
       if (state.showIframeModal) modals += renderIframeModal();
+      if (state.showSideMenu) modals += renderSideMenu();
+      if (state.showProfile) modals += renderProfileModal();
 
       var animClass = '';
       if (swipeDirection === 'left') animClass = ' animate-slide-left';
