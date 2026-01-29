@@ -216,6 +216,17 @@
       margin: 2px 0;
       transition: all 0.3s;
     }
+    
+    /* 별점 팝업 애니메이션 */
+    @keyframes bounceIn {
+      0% { transform: scale(0.3); opacity: 0; }
+      50% { transform: scale(1.05); }
+      70% { transform: scale(0.9); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-bounce-in {
+      animation: bounceIn 0.5s ease-out;
+    }
   </style>
 </head>
 <body class="bg-gray-50">
@@ -6000,7 +6011,7 @@
           '<div class="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">' +
             '<div class="flex justify-between items-center">' +
               '<h2 class="text-xl font-bold">👤 내 프로필</h2>' +
-              '<button onclick="state.showProfile=false;render()" class="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition">' +
+              '<button onclick="state.showProfile=false;render()" class="w-9 h-9 rounded-full bg-gray-800 bg-opacity-60 flex items-center justify-center hover:bg-opacity-80 transition shadow-lg border border-white border-opacity-30 text-white">' +
                 '<i data-lucide="x" class="w-5 h-5"></i>' +
               '</button>' +
             '</div>' +
@@ -6216,14 +6227,71 @@
       renderCalculatorModal();
     }
     
-    // 앱 별점주기
+    // 앱 별점주기 상태
+    state.showRatingModal = false;
+    
+    // 앱 별점주기 팝업 열기
     function openAppRating() {
+      state.showRatingModal = true;
+      render();
+    }
+    
+    // 별점 5점 제출
+    function submitRating() {
       if (FlutterBridge.isFlutterWebView()) {
         FlutterBridge.postMessage('openAppRating', {});
-        showToast('앱 스토어로 이동합니다');
+        showToast('앱 스토어로 이동합니다 🌟');
       } else {
         showToast('앱에서만 별점을 남길 수 있습니다');
       }
+      state.showRatingModal = false;
+      render();
+    }
+    
+    // 별점 팝업 닫기
+    function closeRatingModal() {
+      state.showRatingModal = false;
+      render();
+    }
+    
+    // 별점 팝업 모달 렌더링
+    function renderRatingModal() {
+      if (!state.showRatingModal) return '';
+      
+      return '<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onclick="if(event.target===this){closeRatingModal();}">' +
+        '<div class="bg-gradient-to-b from-[#fffbeb] to-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-bounce-in">' +
+          // 상단 메시지
+          '<div class="px-6 pt-6 pb-2 text-center">' +
+            '<p class="text-gray-700 font-medium text-sm leading-relaxed">' +
+              '돼지저금통이 매일 밤새 일하고 있어요! 🌙<br>' +
+              '별점 5개면 저금통에 행운이 가득! 💰' +
+            '</p>' +
+            '<p class="text-gray-600 text-xs mt-2">' +
+              'Google Play에서 <span class="text-amber-600 font-bold">별점 5점</span>을 남겨주세요!' +
+            '</p>' +
+          '</div>' +
+          // 돼지 캐릭터 이미지
+          '<div class="flex justify-center py-2">' +
+            '<img src="images/pig-rating.png" alt="별점 부탁 돼지" class="w-48 h-auto drop-shadow-lg">' +
+          '</div>' +
+          // 감사 메시지
+          '<div class="text-center pb-3">' +
+            '<p class="text-gray-800 font-bold text-base">꿀꿀~ 정말 감사합니다! 🐷💕</p>' +
+          '</div>' +
+          // 버튼 영역
+          '<div class="px-6 pb-4">' +
+            '<button onclick="submitRating()" class="w-full py-3.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-gray-800 font-bold rounded-full shadow-lg transition transform hover:scale-[1.02] active:scale-95">' +
+              '⭐ 별점 5점 ⭐' +
+            '</button>' +
+          '</div>' +
+          // 취소 링크
+          '<div class="text-center pb-5">' +
+            '<button onclick="closeRatingModal()" class="text-gray-400 text-sm hover:text-gray-600 transition underline">' +
+              '다음에 할게요' +
+            '</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
     }
 
     // Render Side Menu
@@ -6265,9 +6333,22 @@
                 '<div class="text-white text-opacity-80 text-sm">총통장잔고: ' + formatNumber(totalBankBalance) + '원</div>' +
               '</div>' +
             '</div>' +
-            '<button onclick="state.showSideMenu=false;render()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-white hover:bg-opacity-30 transition">' +
-              '<i data-lucide="arrow-left" class="w-5 h-5"></i>' +
+            '<button onclick="state.showSideMenu=false;render()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-gray-800 bg-opacity-60 flex items-center justify-center text-white hover:bg-opacity-80 transition shadow-lg border border-white border-opacity-30">' +
+              '<i data-lucide="x" class="w-5 h-5"></i>' +
             '</button>' +
+            // 구글 로그인/가입 버튼 (등급 아래)
+            (state.googleUser ? 
+              '<div class="mt-3 flex items-center gap-2 bg-white bg-opacity-15 rounded-lg px-3 py-2">' +
+                '<img src="' + (state.googleUser.picture || 'https://via.placeholder.com/24') + '" class="w-6 h-6 rounded-full border border-white border-opacity-50" onerror="this.src=\'https://via.placeholder.com/24\'">' +
+                '<span class="text-white text-xs font-medium truncate flex-1">' + (state.googleUser.name || state.googleUser.email || '로그인됨') + '</span>' +
+                '<span class="text-white text-opacity-70 text-xs">✓</span>' +
+              '</div>'
+            :
+              '<button onclick="state.showSideMenu=false;googleLogin()" class="mt-3 w-full flex items-center justify-center gap-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg px-3 py-2 transition">' +
+                '<svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>' +
+                '<span class="text-white text-xs font-medium">가입하기</span>' +
+              '</button>'
+            ) +
           '</div>' +
           // 메뉴 리스트
           '<div class="flex-1 overflow-y-auto py-2">' +
@@ -6465,6 +6546,7 @@
       if (state.showIframeModal) modals += renderIframeModal();
       if (state.showSideMenu) modals += renderSideMenu();
       if (state.showProfile) modals += renderProfileModal();
+      if (state.showRatingModal) modals += renderRatingModal();
 
       var animClass = '';
       if (swipeDirection === 'left') animClass = ' animate-slide-left';
