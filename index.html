@@ -278,6 +278,7 @@
       showRankInfo: false,
       showIframeModal: false,
       showIncomeDetail: false,
+      showExpenseDetail: false,
       isLoading: true,
       // 숫자 키패드 모달 상태
       showNumpad: false,
@@ -2177,6 +2178,294 @@
       '</div>';
     }
     
+    // Expense Detail Modal (지출 상세 모달)
+    function renderExpenseDetailModal() {
+      var today = new Date();
+      var currentMonth = today.getMonth();
+      var currentYear = today.getFullYear();
+      var monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+      
+      // 이번 달 지출 거래만 필터링
+      var monthlyExpenseTx = state.transactions.filter(function(t) {
+        var d = new Date(t.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear && t.type === 'expense';
+      });
+      
+      // 카테고리별 합계 계산
+      var categoryTotals = {};
+      state.categories.expense.forEach(function(cat) {
+        categoryTotals[cat] = 0;
+      });
+      
+      monthlyExpenseTx.forEach(function(t) {
+        if (categoryTotals[t.category] !== undefined) {
+          categoryTotals[t.category] += t.amount;
+        } else {
+          categoryTotals['기타비'] = (categoryTotals['기타비'] || 0) + t.amount;
+        }
+      });
+      
+      // 총 지출 계산
+      var totalExpense = Object.values(categoryTotals).reduce(function(sum, val) { return sum + val; }, 0);
+      
+      // 카테고리별 색상 및 아이콘 정의
+      var categoryStyles = {
+        '식비': { color: '#EF4444', emoji: '🍚' },
+        '교통비': { color: '#F97316', emoji: '🚗' },
+        '통신비': { color: '#8B5CF6', emoji: '📱' },
+        '생활용품': { color: '#06B6D4', emoji: '🧴' },
+        '의료비': { color: '#EC4899', emoji: '💊' },
+        '교육비': { color: '#3B82F6', emoji: '📚' },
+        '문화생활': { color: '#10B981', emoji: '🎬' },
+        '아버지': { color: '#6366F1', emoji: '👨‍🦳' },
+        '지환': { color: '#14B8A6', emoji: '👦' },
+        '다혜': { color: '#F472B6', emoji: '👧' },
+        '다연': { color: '#A855F7', emoji: '👶' },
+        '보험료': { color: '#64748B', emoji: '🛡️' },
+        '외식비': { color: '#FB923C', emoji: '🍽️' },
+        '세금공과금': { color: '#475569', emoji: '📋' },
+        '주유비': { color: '#84CC16', emoji: '⛽' },
+        '대출상환': { color: '#DC2626', emoji: '🏦' },
+        '기타비': { color: '#9CA3AF', emoji: '📦' }
+      };
+      
+      // 데이터가 있는 카테고리만 필터링하고 금액 순으로 정렬
+      var sortedCategories = Object.keys(categoryTotals)
+        .filter(function(cat) { return categoryTotals[cat] > 0; })
+        .sort(function(a, b) { return categoryTotals[b] - categoryTotals[a]; });
+      
+      // ========== 최근 12개월 지출 데이터 계산 ==========
+      var monthlyExpenseData = [];
+      for (var i = 11; i >= 0; i--) {
+        var targetDate = new Date(currentYear, currentMonth - i, 1);
+        var targetMonth = targetDate.getMonth();
+        var targetYear = targetDate.getFullYear();
+        
+        var monthExpense = state.transactions.filter(function(t) {
+          var d = new Date(t.date);
+          return d.getMonth() === targetMonth && d.getFullYear() === targetYear && t.type === 'expense';
+        }).reduce(function(sum, t) { return sum + t.amount; }, 0);
+        
+        monthlyExpenseData.push({
+          month: targetMonth,
+          year: targetYear,
+          label: (targetMonth + 1) + '월',
+          shortLabel: (targetMonth + 1) + '',
+          expense: monthExpense,
+          isCurrent: i === 0
+        });
+      }
+      
+      // 가장 많은/적은 지출 달 찾기
+      var nonZeroMonths = monthlyExpenseData.filter(function(m) { return m.expense > 0; });
+      var maxExpenseMonth = nonZeroMonths.length > 0 ? nonZeroMonths.reduce(function(max, m) { return m.expense > max.expense ? m : max; }) : null;
+      var minExpenseMonth = nonZeroMonths.length > 0 ? nonZeroMonths.reduce(function(min, m) { return m.expense < min.expense ? m : min; }) : null;
+      var currentMonthData = monthlyExpenseData[11];
+      
+      // 최대값 계산 (막대그래프용)
+      var maxExpense = Math.max.apply(null, monthlyExpenseData.map(function(m) { return m.expense; }));
+      if (maxExpense === 0) maxExpense = 1;
+      
+      // ========== 최근 12개월 카테고리별 지출 데이터 ==========
+      var yearCategoryTotals = {};
+      state.categories.expense.forEach(function(cat) {
+        yearCategoryTotals[cat] = 0;
+      });
+      
+      for (var i = 11; i >= 0; i--) {
+        var targetDate = new Date(currentYear, currentMonth - i, 1);
+        var targetMonth = targetDate.getMonth();
+        var targetYear = targetDate.getFullYear();
+        
+        state.transactions.filter(function(t) {
+          var d = new Date(t.date);
+          return d.getMonth() === targetMonth && d.getFullYear() === targetYear && t.type === 'expense';
+        }).forEach(function(t) {
+          if (yearCategoryTotals[t.category] !== undefined) {
+            yearCategoryTotals[t.category] += t.amount;
+          } else {
+            yearCategoryTotals['기타비'] = (yearCategoryTotals['기타비'] || 0) + t.amount;
+          }
+        });
+      }
+      
+      var yearTotalExpense = Object.values(yearCategoryTotals).reduce(function(sum, val) { return sum + val; }, 0);
+      var sortedYearCategories = Object.keys(yearCategoryTotals)
+        .filter(function(cat) { return yearCategoryTotals[cat] > 0; })
+        .sort(function(a, b) { return yearCategoryTotals[b] - yearCategoryTotals[a]; });
+      
+      // ========== 이번 달 카테고리 리스트 HTML ==========
+      var categoryListHtml = sortedCategories.length > 0 ? sortedCategories.map(function(cat) {
+        var amount = categoryTotals[cat];
+        var percentage = totalExpense > 0 ? ((amount / totalExpense) * 100).toFixed(1) : 0;
+        var style = categoryStyles[cat] || { color: '#9CA3AF', emoji: '📌' };
+        var barWidth = totalExpense > 0 ? (amount / totalExpense) * 100 : 0;
+        
+        return '<div class="bg-white rounded-lg p-3 shadow-sm border border-gray-100">' +
+          '<div class="flex items-center justify-between mb-1.5">' +
+            '<div class="flex items-center gap-2">' +
+              '<div class="w-8 h-8 rounded-lg flex items-center justify-center text-base" style="background-color: ' + style.color + '20;">' + style.emoji + '</div>' +
+              '<div>' +
+                '<div class="font-semibold text-gray-800 text-sm">' + cat + '</div>' +
+                '<div class="text-xs text-gray-500">' + percentage + '%</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="text-right">' +
+              '<div class="font-bold text-base text-gray-900">' + formatNumber(amount) + '<span class="text-xs text-gray-400 ml-0.5">원</span></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="w-full bg-gray-100 rounded-full h-1.5">' +
+            '<div class="h-1.5 rounded-full transition-all" style="width: ' + barWidth + '%; background-color: ' + style.color + ';"></div>' +
+          '</div>' +
+        '</div>';
+      }).join('') : '<div class="text-center text-gray-400 py-8 bg-white rounded-xl">이번 달 지출 내역이 없습니다</div>';
+      
+      // ========== 월별 비교 카드 HTML ==========
+      var comparisonHtml = '';
+      if (maxExpenseMonth && minExpenseMonth) {
+        var diffFromMax = currentMonthData.expense - maxExpenseMonth.expense;
+        var diffFromMin = currentMonthData.expense - minExpenseMonth.expense;
+        var diffMaxPercent = maxExpenseMonth.expense > 0 ? ((diffFromMax / maxExpenseMonth.expense) * 100).toFixed(1) : 0;
+        var diffMinPercent = minExpenseMonth.expense > 0 ? ((diffFromMin / minExpenseMonth.expense) * 100).toFixed(1) : 0;
+        
+        comparisonHtml = '<div class="grid grid-cols-2 gap-3">' +
+          // 최고 지출 달
+          '<div class="bg-gradient-to-br from-rose-50 to-red-50 rounded-xl p-4 border border-rose-200">' +
+            '<div class="flex items-center gap-2 mb-2">' +
+              '<span class="text-2xl">🔥</span>' +
+              '<span class="text-sm font-bold text-rose-700">최고 지출</span>' +
+            '</div>' +
+            '<div class="text-xs text-gray-500 mb-1">' + maxExpenseMonth.year + '년 ' + monthNames[maxExpenseMonth.month] + '</div>' +
+            '<div class="font-bold text-lg text-rose-800">' + formatNumber(maxExpenseMonth.expense) + '원</div>' +
+            '<div class="text-xs mt-2 ' + (diffFromMax <= 0 ? 'text-emerald-600' : 'text-red-500') + '">' +
+              '현재 대비 ' + (diffFromMax >= 0 ? '+' : '') + formatNumber(diffFromMax) + '원 (' + (diffFromMax >= 0 ? '+' : '') + diffMaxPercent + '%)' +
+            '</div>' +
+          '</div>' +
+          // 최저 지출 달
+          '<div class="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-4 border border-emerald-200">' +
+            '<div class="flex items-center gap-2 mb-2">' +
+              '<span class="text-2xl">💚</span>' +
+              '<span class="text-sm font-bold text-emerald-700">최저 지출</span>' +
+            '</div>' +
+            '<div class="text-xs text-gray-500 mb-1">' + minExpenseMonth.year + '년 ' + monthNames[minExpenseMonth.month] + '</div>' +
+            '<div class="font-bold text-lg text-emerald-800">' + formatNumber(minExpenseMonth.expense) + '원</div>' +
+            '<div class="text-xs mt-2 ' + (diffFromMin <= 0 ? 'text-emerald-600' : 'text-red-500') + '">' +
+              '현재 대비 ' + (diffFromMin >= 0 ? '+' : '') + formatNumber(diffFromMin) + '원 (' + (diffFromMin >= 0 ? '+' : '') + diffMinPercent + '%)' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      } else {
+        comparisonHtml = '<div class="text-center text-gray-400 py-4 bg-gray-50 rounded-xl">비교할 지출 데이터가 없습니다</div>';
+      }
+      
+      // ========== 12개월 막대 그래프 HTML ==========
+      var barChartHtml = '<div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">' +
+        '<div class="flex items-end justify-between gap-1" style="height: 120px;">';
+      
+      monthlyExpenseData.forEach(function(m) {
+        var barHeight = maxExpense > 0 ? Math.max((m.expense / maxExpense) * 100, 2) : 2;
+        var barColor = m.isCurrent ? '#EF4444' : (m.expense > 0 ? '#FCA5A5' : '#E5E7EB');
+        
+        barChartHtml += '<div class="flex-1 flex flex-col items-center gap-1">' +
+          '<div class="w-full rounded-t-md transition-all hover:opacity-80 cursor-pointer relative group" style="height: ' + barHeight + '%; background-color: ' + barColor + '; min-height: 4px;">' +
+            '<div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">' +
+              formatNumber(m.expense) + '원' +
+            '</div>' +
+          '</div>' +
+          '<span class="text-xs ' + (m.isCurrent ? 'text-red-600 font-bold' : 'text-gray-400') + '">' + m.shortLabel + '</span>' +
+        '</div>';
+      });
+      
+      barChartHtml += '</div></div>';
+      
+      // ========== 12개월 카테고리별 지출 HTML ==========
+      var yearCategoryHtml = '';
+      if (sortedYearCategories.length > 0) {
+        yearCategoryHtml = '<div class="space-y-3">';
+        sortedYearCategories.forEach(function(cat) {
+          var amount = yearCategoryTotals[cat];
+          var percentage = yearTotalExpense > 0 ? ((amount / yearTotalExpense) * 100).toFixed(1) : 0;
+          var style = categoryStyles[cat] || { color: '#9CA3AF', emoji: '📌' };
+          var barWidth = yearTotalExpense > 0 ? (amount / yearTotalExpense) * 100 : 0;
+          
+          yearCategoryHtml += '<div class="flex items-center gap-3">' +
+            '<div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0" style="background-color: ' + style.color + '20;">' + style.emoji + '</div>' +
+            '<div class="flex-1 min-w-0">' +
+              '<div class="flex justify-between items-center mb-1">' +
+                '<span class="font-medium text-gray-800 truncate">' + cat + '</span>' +
+                '<span class="font-bold text-gray-900 ml-2">' + formatNumber(amount) + '원</span>' +
+              '</div>' +
+              '<div class="flex items-center gap-2">' +
+                '<div class="flex-1 bg-gray-100 rounded-full h-2">' +
+                  '<div class="h-2 rounded-full" style="width: ' + barWidth + '%; background-color: ' + style.color + ';"></div>' +
+                '</div>' +
+                '<span class="text-sm text-gray-500 w-12 text-right">' + percentage + '%</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        });
+        yearCategoryHtml += '</div>';
+      } else {
+        yearCategoryHtml = '<div class="text-center text-gray-400 py-4">카테고리별 지출 데이터가 없습니다</div>';
+      }
+      
+      // ========== 모달 전체 HTML ==========
+      return '<div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50" onclick="if(event.target===this){state.showExpenseDetail=false;render();}">' +
+        '<div class="bg-gray-50 rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden shadow-2xl flex flex-col" style="margin: auto;">' +
+          
+          // 헤더 (고정) - 개선된 UI
+          '<div class="bg-gradient-to-r from-red-600 to-rose-500 p-4 text-white flex-shrink-0 relative">' +
+            // 닫기 버튼 (우측 상단 고정)
+            '<button onclick="state.showExpenseDetail=false;render()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white text-gray-700 hover:bg-gray-100 flex items-center justify-center transition shadow-md" style="font-size: 18px; font-weight: bold; line-height: 1;">✕</button>' +
+            '<div class="pr-10">' +
+              '<h2 class="text-xl font-bold flex items-center gap-2" style="color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">💸 지출 분석</h2>' +
+              '<p class="text-sm mt-1" style="color: rgba(255,255,255,0.9);">' + currentYear + '년 ' + monthNames[currentMonth] + ' 기준</p>' +
+            '</div>' +
+            // 이번 달 총 지출
+            '<div class="mt-3 bg-white rounded-xl p-3 shadow-sm">' +
+              '<div class="text-red-600 text-xs font-medium">이번 달 총 지출</div>' +
+              '<div class="text-2xl font-bold text-gray-800">' + formatNumber(totalExpense) + '<span class="text-sm ml-1 text-gray-500">원</span></div>' +
+            '</div>' +
+          '</div>' +
+          
+          // 스크롤 가능한 콘텐츠 영역
+          '<div class="flex-1 overflow-y-auto p-4 space-y-4">' +
+            
+            // 섹션 1: 이번 달 카테고리별 지출
+            '<div>' +
+              '<h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">📊 이번 달 카테고리별</h3>' +
+              '<div class="space-y-3">' +
+                categoryListHtml +
+              '</div>' +
+            '</div>' +
+            
+            // 섹션 2: 월별 비교 (최고/최저)
+            '<div>' +
+              '<h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">⚖️ 최근 1년 지출 비교</h3>' +
+              comparisonHtml +
+            '</div>' +
+            
+            // 섹션 3: 12개월 막대 그래프
+            '<div>' +
+              '<h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">📈 월별 지출 추이</h3>' +
+              barChartHtml +
+            '</div>' +
+            
+            // 섹션 4: 12개월 카테고리별 지출
+            '<div>' +
+              '<h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">🏷️ 연간 카테고리별 지출</h3>' +
+              '<div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">' +
+                '<div class="text-sm text-gray-500 mb-3">최근 12개월 총 지출: <span class="font-bold text-gray-800">' + formatNumber(yearTotalExpense) + '원</span></div>' +
+                yearCategoryHtml +
+              '</div>' +
+            '</div>' +
+            
+          '</div>' +
+          
+        '</div>' +
+      '</div>';
+    }
+    
     // Rank Info Modal
     function renderRankInfoModal() {
       var totalBankBalance = state.bankBalances.reduce(function(sum, b) { return sum + b.balance; }, 0);
@@ -2367,8 +2656,8 @@
             '<div class="text-xs text-green-600 mb-1">이번 달 수입 <span class="text-green-400">▶</span></div>' +
             '<div class="text-xl font-bold text-green-700">' + formatNumber(totalIncome) + '원</div>' +
           '</div>' +
-          '<div class="bg-red-50 p-4 rounded-lg border border-red-200 shadow-sm">' +
-            '<div class="text-xs text-red-600 mb-1">이번 달 지출</div>' +
+          '<div class="bg-red-50 p-4 rounded-lg border border-red-200 shadow-sm cursor-pointer hover:bg-red-100 transition-colors active:scale-95" onclick="state.showExpenseDetail=true;render();">' +
+            '<div class="text-xs text-red-600 mb-1">이번 달 지출 <span class="text-red-400">▶</span></div>' +
             '<div class="text-xl font-bold text-red-700">' + formatNumber(totalExpense) + '원</div>' +
           '</div>' +
         '</div>' +
@@ -7110,6 +7399,7 @@
       if (state.showAddJournal) modals += renderAddJournalModal();
       if (state.showRankInfo) modals += renderRankInfoModal();
       if (state.showIncomeDetail) modals += renderIncomeDetailModal();
+      if (state.showExpenseDetail) modals += renderExpenseDetailModal();
       if (state.showIframeModal) modals += renderIframeModal();
       if (state.showSideMenu) modals += renderSideMenu();
       if (state.showProfile) modals += renderProfileModal();
