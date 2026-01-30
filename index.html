@@ -6064,7 +6064,7 @@
                     '<span class="text-xs font-medium text-green-700">연결됨</span>' +
                   '</div>' +
                 '</div>' +
-                '<button onclick="googleLogout()" class="w-full py-2.5 px-4 rounded-lg border border-red-200 bg-white hover:bg-red-50 transition flex items-center justify-center gap-2 text-red-600">' +
+                '<button onclick="confirmGoogleLogout()" class="w-full py-2.5 px-4 rounded-lg border border-red-200 bg-white hover:bg-red-50 transition flex items-center justify-center gap-2 text-red-600">' +
                   '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>' +
                   '<span class="text-sm font-medium">로그아웃</span>' +
                 '</button>' +
@@ -6200,16 +6200,32 @@
       }
     }
     
+    // 구글 로그아웃 확인
+    function confirmGoogleLogout() {
+      if (confirm('로그아웃 하시겠습니까?')) {
+        googleLogout();
+      }
+    }
+    
     // 구글 로그아웃
     function googleLogout() {
       state.googleUser = null;
       storage.remove('googleUser');
       saveData();
       
-      // 프로필 모달 닫기
-      state.showProfile = false;
-      render();
-      showToast('로그아웃되었습니다');
+      // 프로필 모달이 열려있으면 닫았다가 다시 열어서 UI 갱신
+      if (state.showProfile) {
+        state.showProfile = false;
+        render();
+        setTimeout(function() {
+          state.showProfile = true;
+          render();
+          showToast('로그아웃되었습니다');
+        }, 100);
+      } else {
+        render();
+        showToast('로그아웃되었습니다');
+      }
       
       // Google 토큰 해제 (선택적)
       if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
@@ -6341,7 +6357,7 @@
             '</button>' +
             // 구글 로그인/가입 버튼 (등급 아래)
             (state.googleUser ? 
-              '<div class="mt-3 flex items-center gap-2 bg-gradient-to-r from-emerald-500/30 to-green-500/30 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20 shadow-lg">' +
+              '<div onclick="confirmGoogleLogout()" class="mt-3 flex items-center gap-2 bg-gradient-to-r from-emerald-500/30 to-green-500/30 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20 shadow-lg cursor-pointer hover:from-emerald-500/40 hover:to-green-500/40 transition-all">' +
                 '<img src="' + (state.googleUser.picture || 'https://via.placeholder.com/32') + '" class="w-8 h-8 rounded-full border-2 border-white/70 shadow-md" onerror="this.src=\'https://via.placeholder.com/32\'">' +
                 '<div class="flex-1 min-w-0">' +
                   '<span class="text-white text-sm font-semibold truncate block drop-shadow-sm">' + (state.googleUser.name || '사용자') + '</span>' +
