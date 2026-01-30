@@ -1484,6 +1484,197 @@
       return { rank: '기초수급자', color: 'text-sky-600', bgColor: 'bg-sky-100', icon: '🌱', gradientFrom: 'from-sky-400', gradientTo: 'to-blue-400', headerGradient: 'from-sky-500 to-blue-500' };
     }
 
+    // 프로필 기반 응원 메시지 생성 함수
+    function getEncouragementMessage() {
+      var profile = state.profile;
+      var nickname = profile.nickname || '회원';
+      var age = profile.age || '';
+      var gender = profile.gender || '';
+      var marriage = profile.marriage || '';
+      var job = profile.job || '';
+      
+      // 성별 기반 호칭
+      var genderPrefix = '';
+      if (gender === '남성') genderPrefix = '멋진 ';
+      else if (gender === '여성') genderPrefix = '아름다우신 ';
+      else genderPrefix = '소중한 ';
+      
+      // 나이대 기반 메시지
+      var ageMessages = [];
+      if (age === '10대') {
+        ageMessages = [
+          '꿈을 향해 달려가는',
+          '무한한 가능성을 가진',
+          '빛나는 청춘의',
+          '미래가 기대되는'
+        ];
+      } else if (age === '20대') {
+        ageMessages = [
+          '열정 가득한',
+          '도전을 두려워하지 않는',
+          '빛나는',
+          '패기 넘치는'
+        ];
+      } else if (age === '30대') {
+        ageMessages = [
+          '인생의 황금기를 보내시는',
+          '노력하시는',
+          '프로페셔널한',
+          '균형잡힌 삶을 사시는'
+        ];
+      } else if (age === '40대') {
+        ageMessages = [
+          '경험이 풍부하신',
+          '삶의 지혜가 깊으신',
+          '든든하신',
+          '안정감 있으신'
+        ];
+      } else if (age === '50대') {
+        ageMessages = [
+          '인생의 황금기를 보내시는',
+          '풍요로운 삶을 사시는',
+          '여유로우신',
+          '원숙하신'
+        ];
+      } else if (age === '60대 이상') {
+        ageMessages = [
+          '존경스러운',
+          '지혜로우신',
+          '삶의 깊이가 느껴지는',
+          '건강하신'
+        ];
+      } else {
+        ageMessages = ['멋지신', '대단하신', '훌륭하신', '능력있는'];
+      }
+      
+      // 결혼 상태 기반 메시지
+      var marriageMessages = [];
+      if (marriage === '미혼') {
+        marriageMessages = [
+          '오늘도 자기 발전에 힘쓰세요!',
+          '좋은 인연이 찾아올 거예요!',
+          '자유로운 하루 되세요!',
+          '자신만의 시간을 즐기세요!'
+        ];
+      } else if (marriage === '기혼') {
+        marriageMessages = [
+          '가정에 행복이 가득하시길!',
+          '사랑하는 가족과 행복한 하루 보내세요!',
+          '가족의 든든한 버팀목이시네요!',
+          '화목한 가정을 꾸려나가세요!'
+        ];
+      } else if (marriage === '기타') {
+        marriageMessages = [
+          '오늘도 행복한 하루 되세요!',
+          '좋은 일만 가득하시길!',
+          '활기찬 하루 보내세요!',
+          '웃음 가득한 하루 되세요!'
+        ];
+      } else {
+        marriageMessages = [
+          '좋은 하루 되세요!',
+          '행복한 하루 보내세요!',
+          '오늘도 화이팅하세요!',
+          '멋진 하루 만드세요!'
+        ];
+      }
+      
+      // 직업 기반 메시지
+      var jobMessages = [];
+      if (job === '직장인') {
+        jobMessages = [
+          '오늘 업무도 파이팅!',
+          '회사에서 능력 발휘하세요!',
+          '성공적인 하루 되세요!',
+          '오늘도 프로답게!'
+        ];
+      } else if (job === '자영업') {
+        jobMessages = [
+          '사업 번창하세요!',
+          '오늘도 손님이 많이 오시길!',
+          '성공적인 하루 되시길!',
+          '사업이 잘 되시길 응원해요!'
+        ];
+      } else if (job === '학생') {
+        jobMessages = [
+          '열공하세요!',
+          '좋은 성적 거두세요!',
+          '학업에 좋은 결실 맺으세요!',
+          '꿈을 향해 달려가세요!'
+        ];
+      } else if (job === '프리랜서') {
+        jobMessages = [
+          '좋은 프로젝트 많이 들어오세요!',
+          '창의력이 빛나는 하루 되세요!',
+          '자유롭게 일하시는 모습이 멋있어요!',
+          '성공적인 작업 되세요!'
+        ];
+      } else if (job === '전업주부') {
+        jobMessages = [
+          '가정에 행복이 가득하시길!',
+          '오늘도 수고 많으세요!',
+          '가볍게 산책하시며 여유를 즐기세요!',
+          '집안일 화이팅!'
+        ];
+      } else if (job === '무직/구직중') {
+        jobMessages = [
+          '좋은 기회가 찾아올 거예요!',
+          '긍정적인 마음으로 화이팅!',
+          '좋은 소식이 있을 거예요!',
+          '취업 성공을 응원해요!'
+        ];
+      } else if (job === '은퇴') {
+        jobMessages = [
+          '여유로운 하루 되세요!',
+          '건강하게 오래오래 사세요!',
+          '행복한 노후 생활 되세요!',
+          '좋아하시는 취미 즐기세요!'
+        ];
+      } else {
+        jobMessages = [
+          '좋은 하루 되세요!',
+          '행복한 시간 보내세요!',
+          '오늘도 파이팅!',
+          '멋진 하루 만드세요!'
+        ];
+      }
+      
+      // 추가 응원 메시지 풀
+      var generalMessages = [
+        '재산 관리 잘 하고 계시네요!',
+        '알뜰한 소비습관 멋져요!',
+        '돈을 모으는 습관이 대단해요!',
+        '절약 실천 최고예요!',
+        '가계부 열심히 쓰시네요!',
+        '오늘도 현명한 소비 하세요!',
+        '재정 목표 달성 화이팅!',
+        '부자 되는 길을 걷고 계세요!'
+      ];
+      
+      // 랜덤 선택
+      var randomAgeMsg = ageMessages[Math.floor(Math.random() * ageMessages.length)];
+      var randomMarriageOrJobMsg = Math.random() > 0.5 
+        ? marriageMessages[Math.floor(Math.random() * marriageMessages.length)]
+        : jobMessages[Math.floor(Math.random() * jobMessages.length)];
+      
+      // 가끔 일반 메시지 사용
+      if (Math.random() < 0.2) {
+        randomMarriageOrJobMsg = generalMessages[Math.floor(Math.random() * generalMessages.length)];
+      }
+      
+      // 메시지 조합
+      var messageTemplates = [
+        genderPrefix + '♡' + nickname + '♡님 ' + randomMarriageOrJobMsg,
+        randomAgeMsg + ' ' + nickname + '님! ' + randomMarriageOrJobMsg,
+        genderPrefix + nickname + '님~ ' + randomMarriageOrJobMsg,
+        nickname + '님! ' + randomAgeMsg + ' 모습이 멋져요! ' + randomMarriageOrJobMsg,
+        '💪 ' + nickname + '님 ' + randomMarriageOrJobMsg,
+        '🌟 ' + randomAgeMsg + ' ' + nickname + '님! ' + randomMarriageOrJobMsg
+      ];
+      
+      return messageTemplates[Math.floor(Math.random() * messageTemplates.length)];
+    }
+
     function getInvestGrade(totalProfit, totalInvested) {
       if (totalInvested === 0) return { grade: '초보', color: 'text-gray-600', bg: 'bg-gray-100' };
       var rate = (totalProfit / totalInvested) * 100;
@@ -6370,11 +6561,18 @@
         '<div class="side-menu-panel absolute left-0 top-0 bottom-0 w-[80%] max-w-sm bg-white shadow-2xl flex flex-col">' +
           // 헤더
           '<div class="bg-gradient-to-r ' + rankInfo.headerGradient + ' p-6">' +
-            '<div class="flex items-center gap-3 mb-4">' +
+            '<div class="flex items-center gap-3 mb-3">' +
               '<div class="w-14 h-14 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-3xl">' + rankInfo.icon + '</div>' +
               '<div>' +
                 '<div class="text-white font-bold text-lg">' + rankInfo.rank + '</div>' +
                 '<div class="text-white text-opacity-80 text-sm">총통장잔고: ' + formatNumber(totalBankBalance) + '원</div>' +
+              '</div>' +
+            '</div>' +
+            // 응원 메시지 표시
+            '<div class="bg-white bg-opacity-15 backdrop-blur-sm rounded-xl px-4 py-3 mb-3 border border-white border-opacity-20">' +
+              '<div class="flex items-start gap-2">' +
+                '<span class="text-lg flex-shrink-0">💬</span>' +
+                '<p class="text-white text-sm leading-relaxed font-medium">' + getEncouragementMessage() + '</p>' +
               '</div>' +
             '</div>' +
             '<button onclick="state.showSideMenu=false;render()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-gray-800 bg-opacity-60 flex items-center justify-center text-white hover:bg-opacity-80 transition shadow-lg border border-white border-opacity-30">' +
