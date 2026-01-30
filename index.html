@@ -6206,19 +6206,10 @@
       storage.remove('googleUser');
       saveData();
       
-      // 프로필 모달이 열려있으면 닫았다가 다시 열어서 UI 갱신
-      if (state.showProfile) {
-        state.showProfile = false;
-        render();
-        setTimeout(function() {
-          state.showProfile = true;
-          render();
-          showToast('로그아웃되었습니다');
-        }, 100);
-      } else {
-        render();
-        showToast('로그아웃되었습니다');
-      }
+      // 프로필 모달 닫기
+      state.showProfile = false;
+      render();
+      showToast('로그아웃되었습니다');
       
       // Google 토큰 해제 (선택적)
       if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
