@@ -6249,10 +6249,10 @@
           '</div>' +
           // 버튼 영역
           '<div class="p-5 flex gap-3">' +
-            '<button onclick="closeLogoutConfirm()" class="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition">' +
+            '<button id="logout-cancel-btn" class="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition">' +
               '취소' +
             '</button>' +
-            '<button onclick="confirmLogout()" class="flex-1 py-3 px-4 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white font-semibold rounded-xl transition shadow-lg">' +
+            '<button id="logout-confirm-btn" class="flex-1 py-3 px-4 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white font-semibold rounded-xl transition shadow-lg">' +
               '확인' +
             '</button>' +
           '</div>' +
@@ -6649,6 +6649,20 @@
           if (searchKeyword) searchKeyword.addEventListener('input', updateHistoryList);
         }
         if (state.activeTab === 'stats') updateStatsContent();
+        
+        // 로그아웃 확인 모달 버튼 이벤트 바인딩
+        var logoutCancelBtn = document.getElementById('logout-cancel-btn');
+        var logoutConfirmBtn = document.getElementById('logout-confirm-btn');
+        if (logoutCancelBtn) {
+          logoutCancelBtn.onclick = function() {
+            closeLogoutConfirm();
+          };
+        }
+        if (logoutConfirmBtn) {
+          logoutConfirmBtn.onclick = function() {
+            confirmLogout();
+          };
+        }
       }, 0);
     }
 
