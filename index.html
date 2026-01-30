@@ -297,12 +297,12 @@
       profile: {
         nickname: '',
         age: '',
-        gender: ''
+        gender: '',
+        marriage: '',
+        job: ''
       },
       // 구글 로그인 상태
-      googleUser: null,  // { name, email, picture, id }
-      // 로그아웃 확인 모달 상태
-      showLogoutConfirm: false
+      googleUser: null  // { name, email, picture, id }
     };
 
     // Flutter WebView Bridge Communication
@@ -841,7 +841,7 @@
         state.usdInitialBudget = exchangeData.usdInitialBudget || 10000000;
         state.jpyInitialBudget = exchangeData.jpyInitialBudget || 10000000;
       }
-      state.profile = storage.get('profile') || { nickname: '', age: '', gender: '' };
+      state.profile = storage.get('profile') || { nickname: '', age: '', gender: '', marriage: '', job: '' };
       state.googleUser = storage.get('googleUser') || null;
       state.isLoading = false;
       
@@ -6007,10 +6007,20 @@
         return '<option value="' + age + '"' + (state.profile.age === age ? ' selected' : '') + '>' + age + '</option>';
       }).join('');
       
+      var marriageOptions = ['미혼', '기혼', '독신', '돌싱'];
+      var marriageOptionsHtml = '<option value="">결혼상태 선택</option>' + marriageOptions.map(function(m) {
+        return '<option value="' + m + '"' + (state.profile.marriage === m ? ' selected' : '') + '>' + m + '</option>';
+      }).join('');
+      
+      var jobOptions = ['무직', '회사원', '일용직', '사업', '주부', '학생', '대학생'];
+      var jobOptionsHtml = '<option value="">직업 선택</option>' + jobOptions.map(function(j) {
+        return '<option value="' + j + '"' + (state.profile.job === j ? ' selected' : '') + '>' + j + '</option>';
+      }).join('');
+      
       return '<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onclick="if(event.target===this){state.showProfile=false;render();}">' +
-        '<div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">' +
+        '<div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">' +
           // 헤더
-          '<div class="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">' +
+          '<div class="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white flex-shrink-0">' +
             '<div class="flex justify-between items-center">' +
               '<h2 class="text-xl font-bold">👤 내 프로필</h2>' +
               '<button onclick="state.showProfile=false;render()" class="w-9 h-9 rounded-full bg-gray-800 bg-opacity-60 flex items-center justify-center hover:bg-opacity-80 transition shadow-lg border border-white border-opacity-30 text-white">' +
@@ -6019,8 +6029,8 @@
             '</div>' +
             '<p class="text-sm text-white text-opacity-80 mt-2">프로필 정보를 입력해주세요</p>' +
           '</div>' +
-          // 폼 내용
-          '<div class="p-6 space-y-5">' +
+          // 폼 내용 (스크롤 가능)
+          '<div class="p-6 space-y-5 overflow-y-auto flex-1">' +
             // 별명 입력
             '<div>' +
               '<label class="block text-sm font-medium text-gray-700 mb-2">별명 (최대 4자)</label>' +
@@ -6049,6 +6059,20 @@
                 '</button>' +
               '</div>' +
             '</div>' +
+            // 결혼 상태 선택
+            '<div>' +
+              '<label class="block text-sm font-medium text-gray-700 mb-2">결혼 상태</label>' +
+              '<select id="profile-marriage" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white">' +
+                marriageOptionsHtml +
+              '</select>' +
+            '</div>' +
+            // 직업 선택
+            '<div>' +
+              '<label class="block text-sm font-medium text-gray-700 mb-2">직업</label>' +
+              '<select id="profile-job" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white">' +
+                jobOptionsHtml +
+              '</select>' +
+            '</div>' +
             // 구분선
             '<hr class="border-gray-200">' +
             // 구글 로그인 섹션 (로그인 상태에 따라 다르게 표시)
@@ -6066,7 +6090,7 @@
                     '<span class="text-xs font-medium text-green-700">연결됨</span>' +
                   '</div>' +
                 '</div>' +
-                '<button onclick="showLogoutConfirm()" class="w-full py-2.5 px-4 rounded-lg border border-red-200 bg-white hover:bg-red-50 transition flex items-center justify-center gap-2 text-red-600">' +
+                '<button onclick="googleLogout()" class="w-full py-2.5 px-4 rounded-lg border border-red-200 bg-white hover:bg-red-50 transition flex items-center justify-center gap-2 text-red-600">' +
                   '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>' +
                   '<span class="text-sm font-medium">로그아웃</span>' +
                 '</button>' +
@@ -6119,9 +6143,13 @@
     function saveProfile() {
       var nicknameEl = document.getElementById('profile-nickname');
       var ageEl = document.getElementById('profile-age');
+      var marriageEl = document.getElementById('profile-marriage');
+      var jobEl = document.getElementById('profile-job');
       
       var nickname = nicknameEl ? nicknameEl.value.trim() : '';
       var age = ageEl ? ageEl.value : '';
+      var marriage = marriageEl ? marriageEl.value : '';
+      var job = jobEl ? jobEl.value : '';
       
       // 별명 검증 (최대 4자)
       if (nickname.length > 4) {
@@ -6131,6 +6159,8 @@
       
       state.profile.nickname = nickname;
       state.profile.age = age;
+      state.profile.marriage = marriage;
+      state.profile.job = job;
       
       saveData();
       state.showProfile = false;
@@ -6202,23 +6232,25 @@
       }
     }
     
-    // 로그아웃 확인창 표시
-    function showLogoutConfirm() {
-      state.showLogoutConfirm = true;
-      render();
-    }
-    
-    // 로그아웃 확인창 닫기
-    function closeLogoutConfirm() {
-      state.showLogoutConfirm = false;
-      render();
-    }
-    
-    // 로그아웃 확인 후 실행
-    function confirmLogout() {
+    // 구글 로그아웃
+    function googleLogout() {
       state.googleUser = null;
       storage.remove('googleUser');
       saveData();
+      
+      // 프로필 모달이 열려있으면 닫았다가 다시 열어서 UI 갱신
+      if (state.showProfile) {
+        state.showProfile = false;
+        render();
+        setTimeout(function() {
+          state.showProfile = true;
+          render();
+          showToast('로그아웃되었습니다');
+        }, 100);
+      } else {
+        render();
+        showToast('로그아웃되었습니다');
+      }
       
       // Google 토큰 해제 (선택적)
       if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
@@ -6226,43 +6258,6 @@
           console.log('Google token revoked');
         });
       }
-      
-      // 로그아웃 확인창 닫기, 프로필 모달 닫기, 사이드 메뉴 닫기, 홈으로 이동
-      state.showLogoutConfirm = false;
-      state.showProfile = false;
-      state.showSideMenu = false;
-      state.activeTab = 'home';
-      render();
-      showToast('로그아웃되었습니다');
-    }
-    
-    // 로그아웃 확인 모달 렌더링
-    function renderLogoutConfirmModal() {
-      if (!state.showLogoutConfirm) return '';
-      
-      return '<div class="fixed inset-0 z-[100] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5);">' +
-        '<div class="bg-white rounded-3xl shadow-2xl w-full max-w-xs overflow-hidden transform animate-bounce-in">' +
-          // 돼지 얼굴 영역
-          '<div class="bg-gradient-to-br from-pink-100 to-pink-200 pt-8 pb-4 flex flex-col items-center">' +
-            '<div class="text-8xl mb-3">🐷</div>' +
-            '<p class="text-gray-800 font-bold text-lg">로그아웃 하시겠습니까?</p>' +
-          '</div>' +
-          // 버튼 영역
-          '<div class="p-5 flex gap-3">' +
-            '<button id="logout-cancel-btn" class="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition">' +
-              '취소' +
-            '</button>' +
-            '<button id="logout-confirm-btn" class="flex-1 py-3 px-4 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white font-semibold rounded-xl transition shadow-lg">' +
-              '확인' +
-            '</button>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-    }
-    
-    // 구글 로그아웃 (기존 함수 - 호환성 유지)
-    function googleLogout() {
-      showLogoutConfirm();
     }
     
     // 사이드 메뉴 계산기 열기
@@ -6385,7 +6380,20 @@
             '<button onclick="state.showSideMenu=false;render()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-gray-800 bg-opacity-60 flex items-center justify-center text-white hover:bg-opacity-80 transition shadow-lg border border-white border-opacity-30">' +
               '<i data-lucide="x" class="w-5 h-5"></i>' +
             '</button>' +
-            '' +
+            // 구글 로그인 상태 표시 (로그인된 경우에만 표시)
+            (state.googleUser ? 
+              '<div class="mt-3 flex items-center gap-2 bg-gradient-to-r from-emerald-500/30 to-green-500/30 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20 shadow-lg">' +
+                '<img src="' + (state.googleUser.picture || 'https://via.placeholder.com/32') + '" class="w-8 h-8 rounded-full border-2 border-white/70 shadow-md" onerror="this.src=\'https://via.placeholder.com/32\'">' +
+                '<div class="flex-1 min-w-0">' +
+                  '<span class="text-white text-sm font-semibold truncate block drop-shadow-sm">' + (state.googleUser.name || '사용자') + '</span>' +
+                  '<span class="text-white/70 text-xs truncate block">' + (state.googleUser.email || '로그인됨') + '</span>' +
+                '</div>' +
+                '<div class="flex items-center gap-1 bg-green-400/40 px-2 py-1 rounded-full">' +
+                  '<svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>' +
+                  '<span class="text-white text-xs font-medium">연결</span>' +
+                '</div>' +
+              '</div>'
+            : '') +
           '</div>' +
           // 메뉴 리스트
           '<div class="flex-1 overflow-y-auto py-4 px-3">' +
@@ -6623,7 +6631,6 @@
       if (state.showSideMenu) modals += renderSideMenu();
       if (state.showProfile) modals += renderProfileModal();
       if (state.showRatingModal) modals += renderRatingModal();
-      if (state.showLogoutConfirm) modals += renderLogoutConfirmModal();
 
       var animClass = '';
       if (swipeDirection === 'left') animClass = ' animate-slide-left';
@@ -6649,20 +6656,6 @@
           if (searchKeyword) searchKeyword.addEventListener('input', updateHistoryList);
         }
         if (state.activeTab === 'stats') updateStatsContent();
-        
-        // 로그아웃 확인 모달 버튼 이벤트 바인딩
-        var logoutCancelBtn = document.getElementById('logout-cancel-btn');
-        var logoutConfirmBtn = document.getElementById('logout-confirm-btn');
-        if (logoutCancelBtn) {
-          logoutCancelBtn.onclick = function() {
-            closeLogoutConfirm();
-          };
-        }
-        if (logoutConfirmBtn) {
-          logoutConfirmBtn.onclick = function() {
-            confirmLogout();
-          };
-        }
       }, 0);
     }
 
