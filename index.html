@@ -6227,9 +6227,10 @@
         });
       }
       
-      // 로그아웃 확인창 닫기, 프로필 모달 닫기, 홈으로 이동
+      // 로그아웃 확인창 닫기, 프로필 모달 닫기, 사이드 메뉴 닫기, 홈으로 이동
       state.showLogoutConfirm = false;
       state.showProfile = false;
+      state.showSideMenu = false;
       state.activeTab = 'home';
       render();
       showToast('로그아웃되었습니다');
