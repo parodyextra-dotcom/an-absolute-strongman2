@@ -1487,6 +1487,13 @@
     // 프로필 기반 응원 메시지 생성 함수
     function getEncouragementMessage() {
       var profile = state.profile;
+      
+      // 프로필 정보가 없으면 프로필 작성 안내 메시지 반환
+      var hasProfile = profile.nickname || profile.age || profile.gender || profile.marriage || profile.job;
+      if (!hasProfile) {
+        return '📝 프로필을 작성하시면 맞춤 응원 메시지를 받아보실 수 있어요!';
+      }
+      
       var nickname = profile.nickname || '회원';
       var age = profile.age || '';
       var gender = profile.gender || '';
@@ -6568,11 +6575,11 @@
                 '<div class="text-white text-opacity-80 text-sm">총통장잔고: ' + formatNumber(totalBankBalance) + '원</div>' +
               '</div>' +
             '</div>' +
-            // 응원 메시지 표시
-            '<div class="bg-white bg-opacity-15 backdrop-blur-sm rounded-xl px-4 py-3 mb-3 border border-white border-opacity-20">' +
+            // 응원 메시지 표시 (카카오톡 스타일)
+            '<div class="rounded-xl px-4 py-3 mb-3 shadow-md" style="background-color: #FEE500;">' +
               '<div class="flex items-start gap-2">' +
                 '<span class="text-lg flex-shrink-0">💬</span>' +
-                '<p class="text-white text-sm leading-relaxed font-medium">' + getEncouragementMessage() + '</p>' +
+                '<p class="text-sm leading-relaxed font-bold" style="color: #3C1E1E;">' + getEncouragementMessage() + '</p>' +
               '</div>' +
             '</div>' +
             '<button onclick="state.showSideMenu=false;render()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-gray-800 bg-opacity-60 flex items-center justify-center text-white hover:bg-opacity-80 transition shadow-lg border border-white border-opacity-30">' +
