@@ -2722,7 +2722,7 @@
         '<div class="bg-gradient-to-r ' + rankInfo.gradientFrom + ' ' + rankInfo.gradientTo + ' text-white p-6 rounded-xl shadow-lg">' +
           '<div class="flex justify-between items-start">' +
             '<div class="flex-1">' +
-              '<div class="text-sm opacity-90 mb-1">총 잔액</div>' +
+              '<div class="text-sm opacity-90 mb-1">총 잔액(현재 예상 저축액)</div>' +
               '<div class="text-3xl font-bold mb-1">' + formatNumber(totalBalance) + '원</div>' +
               '<div id="current-datetime" class="text-xs opacity-75 mb-3"></div>' +
               (state.undoStack.length > 0 ? 
@@ -7238,27 +7238,14 @@
             // 이번달 재정 조언 메시지 (카카오톡 스타일)
             '<div class="rounded-xl px-4 py-3 mb-3 shadow-md" style="background-color: #B2E4FF;">' +
               '<div class="flex items-start gap-2">' +
-                '<span class="text-lg flex-shrink-0">💰</span>' +
+                '<span class="text-lg flex-shrink-0">💬</span>' +
                 '<p class="text-sm leading-relaxed font-bold" style="color: #1A3A5C;">' + getFinancialAdviceMessage() + '</p>' +
               '</div>' +
             '</div>' +
             '<button onclick="state.showSideMenu=false;render()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-gray-800 bg-opacity-60 flex items-center justify-center text-white hover:bg-opacity-80 transition shadow-lg border border-white border-opacity-30">' +
               '<i data-lucide="x" class="w-5 h-5"></i>' +
             '</button>' +
-            // 구글 로그인 상태 표시 (로그인된 경우에만 표시)
-            (state.googleUser ? 
-              '<div class="mt-3 flex items-center gap-2 bg-gradient-to-r from-emerald-500/30 to-green-500/30 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20 shadow-lg">' +
-                '<img src="' + (state.googleUser.picture || 'https://via.placeholder.com/32') + '" class="w-8 h-8 rounded-full border-2 border-white/70 shadow-md" onerror="this.src=\'https://via.placeholder.com/32\'">' +
-                '<div class="flex-1 min-w-0">' +
-                  '<span class="text-white text-sm font-semibold truncate block drop-shadow-sm">' + (state.googleUser.name || '사용자') + '</span>' +
-                  '<span class="text-white/70 text-xs truncate block">' + (state.googleUser.email || '로그인됨') + '</span>' +
-                '</div>' +
-                '<div class="flex items-center gap-1 bg-green-400/40 px-2 py-1 rounded-full">' +
-                  '<svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>' +
-                  '<span class="text-white text-xs font-medium">연결</span>' +
-                '</div>' +
-              '</div>'
-            : '') +
+            
           '</div>' +
           // 메뉴 리스트
           '<div class="flex-1 overflow-y-auto py-4 px-3">' +
