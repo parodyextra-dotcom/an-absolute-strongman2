@@ -1684,6 +1684,93 @@
       return messageTemplates[Math.floor(Math.random() * messageTemplates.length)];
     }
 
+    // 이번달 재정 상태 조언 메시지 생성 함수
+    function getFinancialAdviceMessage() {
+      var profile = state.profile;
+      var nickname = profile.nickname || '회원';
+      
+      var today = new Date();
+      var currentMonth = today.getMonth();
+      var currentYear = today.getFullYear();
+      
+      // 이번 달 수입 계산
+      var monthlyIncome = state.transactions.filter(function(t) {
+        var d = new Date(t.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear && t.type === 'income';
+      }).reduce(function(sum, t) { return sum + t.amount; }, 0);
+      
+      // 이번 달 지출 계산
+      var monthlyExpense = state.transactions.filter(function(t) {
+        var d = new Date(t.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear && t.type === 'expense';
+      }).reduce(function(sum, t) { return sum + t.amount; }, 0);
+      
+      // 이번 달 잔액 (수입 - 지출)
+      var monthlyBalance = monthlyIncome - monthlyExpense;
+      
+      // 저축률 계산
+      var savingsRate = monthlyIncome > 0 ? (monthlyBalance / monthlyIncome) * 100 : 0;
+      
+      // 총 통장 잔고
+      var totalBankBalance = state.bankBalances.reduce(function(sum, b) { return sum + b.balance; }, 0);
+      
+      var adviceMessages = [];
+      
+      // 이달 지출이 수입보다 많은 경우 (적자)
+      if (monthlyBalance < 0) {
+        var deficit = Math.abs(monthlyBalance);
+        adviceMessages = [
+          '😰 ' + nickname + '님, 이달에 ' + formatNumber(deficit) + '원 적자예요! 지출 점검이 필요해요~',
+          '💸 ' + nickname + '님 이달 지출이 많아요! 저축이 중요해요 💪',
+          '⚠️ ' + nickname + '님, 이번 달 수입보다 지출이 많아요. 지출을 줄여보세요!',
+          '🚨 ' + nickname + '님~ 적자가 ' + formatNumber(deficit) + '원이에요. 허리띠 졸라매기 ㄱㄱ!',
+          '😅 ' + nickname + '님, 이달 지출 폭발! 남은 날 알뜰 소비 도전해봐요~'
+        ];
+      }
+      // 저축률이 10% 미만인 경우
+      else if (savingsRate < 10 && monthlyIncome > 0) {
+        adviceMessages = [
+          '📊 ' + nickname + '님, 저축률이 ' + savingsRate.toFixed(0) + '%예요. 조금만 더 아껴보아요!',
+          '💡 ' + nickname + '님, 이달 저축이 적어요~ 작은 절약이 큰 부자를 만들어요!',
+          '🐷 ' + nickname + '님! 저축률 10% 목표로 화이팅! 할 수 있어요~',
+          '✨ ' + nickname + '님, 매달 10%만 저축해도 1년이면 큰 돈이에요!',
+          '💰 ' + nickname + '님~ 커피 한잔 아끼면 저축률 UP! 도전해봐요 ☕'
+        ];
+      }
+      // 저축률 10~30% (보통)
+      else if (savingsRate >= 10 && savingsRate < 30) {
+        adviceMessages = [
+          '👍 ' + nickname + '님, 저축률 ' + savingsRate.toFixed(0) + '%! 잘하고 계세요~',
+          '🌱 ' + nickname + '님 착실하게 모으고 계시네요! 꾸준함이 부자의 비결!',
+          '😊 ' + nickname + '님, 이달 ' + formatNumber(monthlyBalance) + '원 플러스! 좋아요~',
+          '💪 ' + nickname + '님, 꾸준한 저축 습관 최고예요! 계속 화이팅!',
+          '🎯 ' + nickname + '님~ 저축률 30% 목표로 조금 더 도전해봐요!'
+        ];
+      }
+      // 저축률 30% 이상 (우수)
+      else if (savingsRate >= 30) {
+        adviceMessages = [
+          '🎉 ' + nickname + '님, 저축률 ' + savingsRate.toFixed(0) + '%! 대단해요! 부자 되실 분!',
+          '🏆 ' + nickname + '님 알뜰왕! 이달 ' + formatNumber(monthlyBalance) + '원 저축 성공!',
+          '✨ ' + nickname + '님, 저축 습관 최고예요! 이 속도면 목표 달성 문제없어요!',
+          '🌟 ' + nickname + '님~ 저축의 신! 부럽습니다 ㅎㅎ',
+          '💎 ' + nickname + '님, 절약 실천 멋져요! 미래가 밝아요~'
+        ];
+      }
+      // 거래 내역이 없는 경우
+      else {
+        adviceMessages = [
+          '📝 ' + nickname + '님, 이달 내역을 기록하면 맞춤 조언을 드릴게요!',
+          '✏️ ' + nickname + '님~ 오늘 쓴 돈 기록하고 관리해봐요!',
+          '💡 ' + nickname + '님, 가계부 기록이 부자의 첫걸음이에요!',
+          '🐷 ' + nickname + '님, 지출 기록하면 돈이 어디로 가는지 보여요~',
+          '📊 ' + nickname + '님! 오늘부터 기록 시작해볼까요?'
+        ];
+      }
+      
+      return adviceMessages[Math.floor(Math.random() * adviceMessages.length)];
+    }
+
     function getInvestGrade(totalProfit, totalInvested) {
       if (totalInvested === 0) return { grade: '초보', color: 'text-gray-600', bg: 'bg-gray-100' };
       var rate = (totalProfit / totalInvested) * 100;
@@ -7142,10 +7229,17 @@
               '</div>' +
             '</div>' +
             // 응원 메시지 표시 (카카오톡 스타일)
-            '<div class="rounded-xl px-4 py-3 mb-3 shadow-md" style="background-color: #FEE500;">' +
+            '<div class="rounded-xl px-4 py-3 mb-2 shadow-md" style="background-color: #FEE500;">' +
               '<div class="flex items-start gap-2">' +
                 '<span class="text-lg flex-shrink-0">💬</span>' +
                 '<p class="text-sm leading-relaxed font-bold" style="color: #3C1E1E;">' + getEncouragementMessage() + '</p>' +
+              '</div>' +
+            '</div>' +
+            // 이번달 재정 조언 메시지 (카카오톡 스타일)
+            '<div class="rounded-xl px-4 py-3 mb-3 shadow-md" style="background-color: #B2E4FF;">' +
+              '<div class="flex items-start gap-2">' +
+                '<span class="text-lg flex-shrink-0">💰</span>' +
+                '<p class="text-sm leading-relaxed font-bold" style="color: #1A3A5C;">' + getFinancialAdviceMessage() + '</p>' +
               '</div>' +
             '</div>' +
             '<button onclick="state.showSideMenu=false;render()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-gray-800 bg-opacity-60 flex items-center justify-center text-white hover:bg-opacity-80 transition shadow-lg border border-white border-opacity-30">' +
