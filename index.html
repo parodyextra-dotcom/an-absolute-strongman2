@@ -2157,25 +2157,70 @@
         comparisonHtml = '<div class="text-center text-gray-400 py-4 bg-gray-50 rounded-xl">비교할 수입 데이터가 없습니다</div>';
       }
       
-      // ========== 12개월 막대 그래프 HTML ==========
-      var barChartHtml = '<div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">' +
-        '<div class="flex items-end justify-between gap-1" style="height: 120px;">';
+      // ========== 12개월 막대 그래프 HTML (이미지 스타일 개선) ==========
+      // Y축 눈금 계산
+      var incomeYAxisMax = Math.ceil(maxIncome / 500000) * 500000;
+      if (incomeYAxisMax === 0) incomeYAxisMax = 1000000;
+      var incomeYAxisSteps = [0, incomeYAxisMax * 0.25, incomeYAxisMax * 0.5, incomeYAxisMax * 0.75, incomeYAxisMax];
+      
+      var barChartHtml = '<div class="bg-gradient-to-b from-gray-50 to-white rounded-2xl p-5 shadow-lg border border-gray-200" style="position: relative;">' +
+        // 차트 제목
+        '<div class="text-center mb-4">' +
+          '<span class="text-lg font-bold text-gray-800">월별 수입 현황</span>' +
+        '</div>' +
+        // Y축 레이블과 그리드 라인이 있는 차트 영역
+        '<div style="display: flex; height: 220px; position: relative;">' +
+          // Y축 레이블
+          '<div style="width: 60px; display: flex; flex-direction: column-reverse; justify-content: space-between; padding-right: 8px; font-size: 11px; color: #6b7280;">' +
+            incomeYAxisSteps.map(function(val) {
+              return '<span style="text-align: right;">' + (val >= 10000 ? Math.round(val / 10000) + '만 원' : val + '원') + '</span>';
+            }).join('') +
+          '</div>' +
+          // 차트 영역
+          '<div style="flex: 1; position: relative; border-left: 2px solid #e5e7eb;">' +
+            // 수평 그리드 라인
+            '<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none;">' +
+              [0,1,2,3,4].map(function() { return '<div style="border-bottom: 1px dashed #e5e7eb; height: 0;"></div>'; }).join('') +
+            '</div>' +
+            // 막대 그래프들
+            '<div style="display: flex; align-items: flex-end; justify-content: space-around; height: 100%; padding: 0 4px; position: relative; z-index: 1;">';
       
       monthlyIncomeData.forEach(function(m) {
-        var barHeight = maxIncome > 0 ? Math.max((m.income / maxIncome) * 100, 2) : 2;
-        var barColor = m.isCurrent ? '#4F46E5' : (m.income > 0 ? '#93C5FD' : '#E5E7EB');
+        var barHeight = incomeYAxisMax > 0 ? Math.max((m.income / incomeYAxisMax) * 100, 1) : 1;
+        var isCurrentMonth = m.isCurrent;
+        // 그라데이션 색상 적용
+        var gradientStyle = isCurrentMonth 
+          ? 'background: linear-gradient(to top, #4F46E5, #818CF8);' 
+          : (m.income > 0 ? 'background: linear-gradient(to top, #60A5FA, #93C5FD);' : 'background: #E5E7EB;');
         
-        barChartHtml += '<div class="flex-1 flex flex-col items-center gap-1">' +
-          '<div class="w-full rounded-t-md transition-all hover:opacity-80 cursor-pointer relative group" style="height: ' + barHeight + '%; background-color: ' + barColor + '; min-height: 4px;">' +
-            '<div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">' +
+        barChartHtml += '<div style="flex: 1; display: flex; flex-direction: column; align-items: center; max-width: 28px; height: 100%;">' +
+          // 막대 컨테이너 (아래에서 위로)
+          '<div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; width: 100%; position: relative;">' +
+            // 금액 레이블 (막대 위에 세로로)
+            '<div style="position: absolute; bottom: ' + barHeight + '%; left: 50%; transform: translateX(-50%) rotate(-90deg); transform-origin: center bottom; white-space: nowrap; font-size: 9px; font-weight: 600; color: ' + (isCurrentMonth ? '#4F46E5' : '#3B82F6') + '; margin-bottom: 4px; ' + (m.income > 0 ? '' : 'display: none;') + '">' +
               formatNumber(m.income) + '원' +
             '</div>' +
+            // 막대
+            '<div style="width: 100%; border-radius: 4px 4px 0 0; ' + gradientStyle + ' height: ' + barHeight + '%; min-height: 3px; transition: all 0.3s ease; box-shadow: ' + (isCurrentMonth ? '0 4px 12px rgba(79, 70, 229, 0.4)' : '0 2px 6px rgba(96, 165, 250, 0.3)') + ';"></div>' +
           '</div>' +
-          '<span class="text-xs ' + (m.isCurrent ? 'text-indigo-600 font-bold' : 'text-gray-400') + '">' + m.shortLabel + '</span>' +
+          // 월 레이블
+          '<div style="margin-top: 8px; font-size: 11px; font-weight: ' + (isCurrentMonth ? '700' : '500') + '; color: ' + (isCurrentMonth ? '#4F46E5' : '#6b7280') + ';">' + m.shortLabel + '월</div>' +
         '</div>';
       });
       
-      barChartHtml += '</div></div>';
+      barChartHtml += '</div></div></div>' +
+        // 범례
+        '<div style="display: flex; justify-content: center; gap: 16px; margin-top: 12px; font-size: 11px;">' +
+          '<div style="display: flex; align-items: center; gap: 6px;">' +
+            '<div style="width: 12px; height: 12px; border-radius: 2px; background: linear-gradient(to top, #4F46E5, #818CF8);"></div>' +
+            '<span style="color: #4F46E5; font-weight: 600;">이번 달</span>' +
+          '</div>' +
+          '<div style="display: flex; align-items: center; gap: 6px;">' +
+            '<div style="width: 12px; height: 12px; border-radius: 2px; background: linear-gradient(to top, #60A5FA, #93C5FD);"></div>' +
+            '<span style="color: #6b7280;">지난 달</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
       
       // ========== 12개월 카테고리별 수입 HTML ==========
       var yearCategoryHtml = '';
@@ -2445,25 +2490,70 @@
         comparisonHtml = '<div class="text-center text-gray-400 py-4 bg-gray-50 rounded-xl">비교할 지출 데이터가 없습니다</div>';
       }
       
-      // ========== 12개월 막대 그래프 HTML ==========
-      var barChartHtml = '<div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">' +
-        '<div class="flex items-end justify-between gap-1" style="height: 120px;">';
+      // ========== 12개월 막대 그래프 HTML (이미지 스타일 개선) ==========
+      // Y축 눈금 계산
+      var expenseYAxisMax = Math.ceil(maxExpense / 500000) * 500000;
+      if (expenseYAxisMax === 0) expenseYAxisMax = 1000000;
+      var expenseYAxisSteps = [0, expenseYAxisMax * 0.25, expenseYAxisMax * 0.5, expenseYAxisMax * 0.75, expenseYAxisMax];
+      
+      var barChartHtml = '<div class="bg-gradient-to-b from-gray-50 to-white rounded-2xl p-5 shadow-lg border border-gray-200" style="position: relative;">' +
+        // 차트 제목
+        '<div class="text-center mb-4">' +
+          '<span class="text-lg font-bold text-gray-800">월별 지출 현황</span>' +
+        '</div>' +
+        // Y축 레이블과 그리드 라인이 있는 차트 영역
+        '<div style="display: flex; height: 220px; position: relative;">' +
+          // Y축 레이블
+          '<div style="width: 60px; display: flex; flex-direction: column-reverse; justify-content: space-between; padding-right: 8px; font-size: 11px; color: #6b7280;">' +
+            expenseYAxisSteps.map(function(val) {
+              return '<span style="text-align: right;">' + (val >= 10000 ? Math.round(val / 10000) + '만 원' : val + '원') + '</span>';
+            }).join('') +
+          '</div>' +
+          // 차트 영역
+          '<div style="flex: 1; position: relative; border-left: 2px solid #e5e7eb;">' +
+            // 수평 그리드 라인
+            '<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none;">' +
+              [0,1,2,3,4].map(function() { return '<div style="border-bottom: 1px dashed #e5e7eb; height: 0;"></div>'; }).join('') +
+            '</div>' +
+            // 막대 그래프들
+            '<div style="display: flex; align-items: flex-end; justify-content: space-around; height: 100%; padding: 0 4px; position: relative; z-index: 1;">';
       
       monthlyExpenseData.forEach(function(m) {
-        var barHeight = maxExpense > 0 ? Math.max((m.expense / maxExpense) * 100, 2) : 2;
-        var barColor = m.isCurrent ? '#EF4444' : (m.expense > 0 ? '#FCA5A5' : '#E5E7EB');
+        var barHeight = expenseYAxisMax > 0 ? Math.max((m.expense / expenseYAxisMax) * 100, 1) : 1;
+        var isCurrentMonth = m.isCurrent;
+        // 그라데이션 색상 적용 (지출은 빨간색 계열)
+        var gradientStyle = isCurrentMonth 
+          ? 'background: linear-gradient(to top, #DC2626, #F87171);' 
+          : (m.expense > 0 ? 'background: linear-gradient(to top, #60A5FA, #93C5FD);' : 'background: #E5E7EB;');
         
-        barChartHtml += '<div class="flex-1 flex flex-col items-center gap-1">' +
-          '<div class="w-full rounded-t-md transition-all hover:opacity-80 cursor-pointer relative group" style="height: ' + barHeight + '%; background-color: ' + barColor + '; min-height: 4px;">' +
-            '<div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">' +
+        barChartHtml += '<div style="flex: 1; display: flex; flex-direction: column; align-items: center; max-width: 28px; height: 100%;">' +
+          // 막대 컨테이너 (아래에서 위로)
+          '<div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; width: 100%; position: relative;">' +
+            // 금액 레이블 (막대 위에 세로로)
+            '<div style="position: absolute; bottom: ' + barHeight + '%; left: 50%; transform: translateX(-50%) rotate(-90deg); transform-origin: center bottom; white-space: nowrap; font-size: 9px; font-weight: 600; color: ' + (isCurrentMonth ? '#DC2626' : '#3B82F6') + '; margin-bottom: 4px; ' + (m.expense > 0 ? '' : 'display: none;') + '">' +
               formatNumber(m.expense) + '원' +
             '</div>' +
+            // 막대
+            '<div style="width: 100%; border-radius: 4px 4px 0 0; ' + gradientStyle + ' height: ' + barHeight + '%; min-height: 3px; transition: all 0.3s ease; box-shadow: ' + (isCurrentMonth ? '0 4px 12px rgba(220, 38, 38, 0.4)' : '0 2px 6px rgba(96, 165, 250, 0.3)') + ';"></div>' +
           '</div>' +
-          '<span class="text-xs ' + (m.isCurrent ? 'text-red-600 font-bold' : 'text-gray-400') + '">' + m.shortLabel + '</span>' +
+          // 월 레이블
+          '<div style="margin-top: 8px; font-size: 11px; font-weight: ' + (isCurrentMonth ? '700' : '500') + '; color: ' + (isCurrentMonth ? '#DC2626' : '#6b7280') + ';">' + m.shortLabel + '월</div>' +
         '</div>';
       });
       
-      barChartHtml += '</div></div>';
+      barChartHtml += '</div></div></div>' +
+        // 범례
+        '<div style="display: flex; justify-content: center; gap: 16px; margin-top: 12px; font-size: 11px;">' +
+          '<div style="display: flex; align-items: center; gap: 6px;">' +
+            '<div style="width: 12px; height: 12px; border-radius: 2px; background: linear-gradient(to top, #DC2626, #F87171);"></div>' +
+            '<span style="color: #DC2626; font-weight: 600;">이번 달</span>' +
+          '</div>' +
+          '<div style="display: flex; align-items: center; gap: 6px;">' +
+            '<div style="width: 12px; height: 12px; border-radius: 2px; background: linear-gradient(to top, #60A5FA, #93C5FD);"></div>' +
+            '<span style="color: #6b7280;">지난 달</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
       
       // ========== 12개월 카테고리별 지출 HTML ==========
       var yearCategoryHtml = '';
