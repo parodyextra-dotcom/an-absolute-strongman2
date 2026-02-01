@@ -4035,23 +4035,75 @@
       var existing = document.getElementById('edit-transaction-modal');
       if (existing) existing.remove();
 
-      var categories = tx.type === 'income' ? state.categories.income : state.categories.expense;
+      var isExpense = tx.type === 'expense';
+      var categories = isExpense ? state.categories.expense : state.categories.income;
       var categoryOptions = categories.map(function(c) {
         return '<option value="' + c + '"' + (c === tx.category ? ' selected' : '') + '>' + c + '</option>';
+      }).join('');
+
+      // 결제수단 옵션 (지출일 때만)
+      var paymentOptions = '';
+      if (isExpense) {
+        var payments = [
+          { value: 'card', label: '카드' },
+          { value: 'cash', label: '현금' },
+          { value: 'other', label: '기타지불' }
+        ];
+        paymentOptions = payments.map(function(p) {
+          return '<option value="' + p.value + '"' + (p.value === tx.payment ? ' selected' : '') + '>' + p.label + '</option>';
+        }).join('');
+      }
+
+      // 할부 옵션 (지출 + 카드일 때만)
+      var installmentOptions = [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24, 36, 48, 60, 72].map(function(m) {
+        var label = m === 0 ? '일시불' : m + '개월';
+        return '<option value="' + m + '"' + (m === (tx.installment || 0) ? ' selected' : '') + '>' + label + '</option>';
       }).join('');
 
       var modalHtml = '<div id="edit-transaction-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onclick="if(event.target===this)closeEditTransactionModal()">' +
         '<div class="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">' +
           '<div class="p-4 border-b"><h2 class="text-xl font-bold">거래 수정</h2></div>' +
           '<div class="p-4 space-y-4">' +
+            // 수입/지출 타입 선택
+            '<div class="flex gap-2">' +
+              '<button id="editBtn-expense" onclick="setEditTxType(\'expense\')" class="flex-1 py-2 rounded-lg ' + (isExpense ? 'bg-red-500 text-white' : 'bg-gray-200') + '">지출</button>' +
+              '<button id="editBtn-income" onclick="setEditTxType(\'income\')" class="flex-1 py-2 rounded-lg ' + (!isExpense ? 'bg-green-500 text-white' : 'bg-gray-200') + '">수입</button>' +
+            '</div>' +
+            '<input type="hidden" id="editTxType" value="' + tx.type + '">' +
+            // 날짜
+            '<div><label class="block text-sm font-medium mb-1">날짜</label>' +
+              '<input type="date" id="editTxDate" value="' + tx.date + '" class="w-full p-2 border rounded-lg">' +
+            '</div>' +
+            // 금액
             '<div><label class="block text-sm font-medium mb-1">금액</label>' +
               '<input type="text" id="editTxAmount" value="' + tx.amount.toLocaleString() + '" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" readonly onclick="handleAmountClick(\'editTxAmount\', \'금액 수정\')">' +
             '</div>' +
+            // 지출 전용 옵션들
+            '<div id="editExpenseOptions" class="space-y-4' + (!isExpense ? ' hidden' : '') + '">' +
+              // 결제수단
+              '<div><label class="block text-sm font-medium mb-1">결제수단</label>' +
+                '<select id="editTxPayment" onchange="toggleEditInstallment()" class="w-full p-2 border rounded-lg">' + paymentOptions + '</select>' +
+              '</div>' +
+              // 할부
+              '<div id="editInstallmentDiv"' + (tx.payment !== 'card' ? ' class="hidden"' : '') + '><label class="block text-sm font-medium mb-1">할부</label>' +
+                '<select id="editTxInstallment" class="w-full p-2 border rounded-lg">' + installmentOptions + '</select>' +
+              '</div>' +
+              // 지출유형
+              '<div><label class="block text-sm font-medium mb-1">지출 유형</label>' +
+                '<div class="flex gap-2">' +
+                  '<button id="editBtn-necessary" onclick="setEditNecessary(true)" class="flex-1 py-2 rounded-lg ' + (tx.necessary !== false ? 'bg-blue-500 text-white' : 'bg-gray-200') + '">필요지출</button>' +
+                  '<button id="editBtn-unnecessary" onclick="setEditNecessary(false)" class="flex-1 py-2 rounded-lg ' + (tx.necessary === false ? 'bg-orange-500 text-white' : 'bg-gray-200') + '">불필요지출</button>' +
+                '</div>' +
+                '<input type="hidden" id="editTxNecessary" value="' + (tx.necessary !== false ? 'true' : 'false') + '">' +
+              '</div>' +
+            '</div>' +
+            // 카테고리
             '<div><label class="block text-sm font-medium mb-1">카테고리</label>' +
               '<select id="editTxCategory" class="w-full p-2 border rounded-lg">' + categoryOptions + '</select>' +
             '</div>' +
+            // 메모
             '<div><label class="block text-sm font-medium mb-1">메모</label>' +
-              '<input type="text" id="editTxMemo" value="' + (tx.memo || '') + '" class="w-full p-2 border rounded-lg" placeholder="메모 입력">' +
+              '<textarea id="editTxMemo" class="w-full p-2 border rounded-lg" rows="2" placeholder="메모 입력">' + (tx.memo || '') + '</textarea>' +
             '</div>' +
             '<div class="flex gap-2 pt-4">' +
               '<button onclick="saveEditTransaction()" class="flex-1 bg-blue-500 text-white py-3 rounded-lg font-medium">저장</button>' +
@@ -4064,21 +4116,89 @@
       document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
 
+    function setEditTxType(type) {
+      document.getElementById('editTxType').value = type;
+      var expenseBtn = document.getElementById('editBtn-expense');
+      var incomeBtn = document.getElementById('editBtn-income');
+      var expenseOptions = document.getElementById('editExpenseOptions');
+      var categorySelect = document.getElementById('editTxCategory');
+      
+      if (type === 'expense') {
+        expenseBtn.className = 'flex-1 py-2 rounded-lg bg-red-500 text-white';
+        incomeBtn.className = 'flex-1 py-2 rounded-lg bg-gray-200';
+        expenseOptions.classList.remove('hidden');
+        // 카테고리 옵션 변경
+        categorySelect.innerHTML = state.categories.expense.map(function(c) {
+          return '<option value="' + c + '">' + c + '</option>';
+        }).join('');
+      } else {
+        expenseBtn.className = 'flex-1 py-2 rounded-lg bg-gray-200';
+        incomeBtn.className = 'flex-1 py-2 rounded-lg bg-green-500 text-white';
+        expenseOptions.classList.add('hidden');
+        // 카테고리 옵션 변경
+        categorySelect.innerHTML = state.categories.income.map(function(c) {
+          return '<option value="' + c + '">' + c + '</option>';
+        }).join('');
+      }
+    }
+
+    function toggleEditInstallment() {
+      var payment = document.getElementById('editTxPayment').value;
+      var installmentDiv = document.getElementById('editInstallmentDiv');
+      if (payment === 'card') {
+        installmentDiv.classList.remove('hidden');
+      } else {
+        installmentDiv.classList.add('hidden');
+        document.getElementById('editTxInstallment').value = '0';
+      }
+    }
+
+    function setEditNecessary(necessary) {
+      document.getElementById('editTxNecessary').value = necessary ? 'true' : 'false';
+      var necessaryBtn = document.getElementById('editBtn-necessary');
+      var unnecessaryBtn = document.getElementById('editBtn-unnecessary');
+      if (necessary) {
+        necessaryBtn.className = 'flex-1 py-2 rounded-lg bg-blue-500 text-white';
+        unnecessaryBtn.className = 'flex-1 py-2 rounded-lg bg-gray-200';
+      } else {
+        necessaryBtn.className = 'flex-1 py-2 rounded-lg bg-gray-200';
+        unnecessaryBtn.className = 'flex-1 py-2 rounded-lg bg-orange-500 text-white';
+      }
+    }
+
     function saveEditTransaction() {
       var tx = state.transactions.find(function(t) { return t.id === state.editingTransactionId; });
       if (!tx) return;
 
+      var newType = document.getElementById('editTxType').value;
+      var newDate = document.getElementById('editTxDate').value;
       var newAmount = getAmountValue('editTxAmount');
       var newCategory = document.getElementById('editTxCategory').value;
       var newMemo = document.getElementById('editTxMemo').value;
 
+      // 지출인 경우 추가 필드
+      var newPayment = 'cash';
+      var newInstallment = 0;
+      var newNecessary = true;
+      if (newType === 'expense') {
+        newPayment = document.getElementById('editTxPayment').value;
+        newInstallment = parseInt(document.getElementById('editTxInstallment').value) || 0;
+        newNecessary = document.getElementById('editTxNecessary').value === 'true';
+      }
+
+      tx.type = newType;
+      tx.date = newDate || tx.date;
       tx.amount = newAmount || tx.amount;
       tx.category = newCategory || tx.category;
       tx.memo = newMemo;
+      tx.payment = newPayment;
+      tx.installment = newInstallment;
+      tx.necessary = newNecessary;
 
       saveData();
       closeEditTransactionModal();
       updateHistoryList();
+      render();
       showToast('거래가 수정되었습니다');
     }
 
@@ -6831,15 +6951,63 @@
       var existing = document.getElementById('edit-fixed-expense-modal');
       if (existing) existing.remove();
 
+      // 출금일 옵션 생성
+      var payDayOptions = '';
+      for (var i = 1; i <= 28; i++) {
+        payDayOptions += '<option value="' + i + '"' + (i === fe.payDay ? ' selected' : '') + '>' + i + '일</option>';
+      }
+
+      // 결제수단 옵션
+      var paymentOptions = [
+        { value: 'card', label: '카드' },
+        { value: 'cash', label: '현금' },
+        { value: 'other', label: '기타지불' }
+      ].map(function(p) {
+        return '<option value="' + p.value + '"' + (p.value === fe.paymentMethod ? ' selected' : '') + '>' + p.label + '</option>';
+      }).join('');
+
+      // 카테고리 옵션
+      var categoryOptions = state.categories.expense.map(function(c) {
+        return '<option value="' + c + '"' + (c === fe.category ? ' selected' : '') + '>' + c + '</option>';
+      }).join('');
+
       var modalHtml = '<div id="edit-fixed-expense-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onclick="if(event.target===this)closeEditFixedExpenseModal()">' +
         '<div class="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">' +
-          '<div class="p-4 border-b bg-purple-50"><h2 class="text-xl font-bold text-purple-700">고정비 수정</h2></div>' +
+          '<div class="p-4 border-b bg-purple-50"><h2 class="text-xl font-bold text-purple-700">📅 고정비 수정</h2></div>' +
           '<div class="p-4 space-y-4">' +
-            '<div><label class="block text-sm font-medium mb-1">매월 금액</label>' +
-              '<input type="text" id="editFeAmount" value="' + fe.amount.toLocaleString() + '" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" readonly onclick="handleAmountClick(\'editFeAmount\', \'매월 금액\')">' +
+            // 시작날짜, 종료날짜
+            '<div class="grid grid-cols-2 gap-2">' +
+              '<div><label class="block text-sm font-medium mb-1">시작날짜</label>' +
+                '<input type="date" id="editFeStartDate" value="' + fe.startDate + '" class="w-full p-2 border rounded-lg">' +
+              '</div>' +
+              '<div><label class="block text-sm font-medium mb-1">종료날짜</label>' +
+                '<input type="date" id="editFeEndDate" value="' + (fe.endDate || '') + '" class="w-full p-2 border rounded-lg" placeholder="비워두면 무기한">' +
+              '</div>' +
             '</div>' +
-            '<div><label class="block text-sm font-medium mb-1">종료날짜 (비워두면 무기한)</label>' +
-              '<input type="date" id="editFeEndDate" value="' + (fe.endDate || '') + '" class="w-full p-2 border rounded-lg">' +
+            // 출금일, 금액
+            '<div class="grid grid-cols-2 gap-2">' +
+              '<div><label class="block text-sm font-medium mb-1">매월 출금일</label>' +
+                '<select id="editFePayDay" class="w-full p-2 border rounded-lg">' + payDayOptions + '</select>' +
+              '</div>' +
+              '<div><label class="block text-sm font-medium mb-1">매월 금액</label>' +
+                '<input type="text" id="editFeAmount" value="' + fe.amount.toLocaleString() + '" class="w-full p-2 border rounded-lg bg-gray-50 cursor-pointer" readonly onclick="handleAmountClick(\'editFeAmount\', \'매월 금액\')">' +
+              '</div>' +
+            '</div>' +
+            // 결제수단
+            '<div><label class="block text-sm font-medium mb-1">결제수단</label>' +
+              '<select id="editFePaymentMethod" class="w-full p-2 border rounded-lg">' + paymentOptions + '</select>' +
+            '</div>' +
+            // 카테고리
+            '<div><label class="block text-sm font-medium mb-1">카테고리</label>' +
+              '<select id="editFeCategory" class="w-full p-2 border rounded-lg">' + categoryOptions + '</select>' +
+            '</div>' +
+            // 메모
+            '<div><label class="block text-sm font-medium mb-1">메모</label>' +
+              '<input type="text" id="editFeMemo" value="' + (fe.memo || '') + '" class="w-full p-2 border rounded-lg" placeholder="메모 입력">' +
+            '</div>' +
+            // 안내 문구
+            '<div class="bg-purple-100 p-3 rounded-lg text-sm text-purple-700">' +
+              '💡 고정비는 시작날짜부터 종료날짜까지 매월 출금일에 자동으로 지출이 입력됩니다.' +
             '</div>' +
             '<div class="flex gap-2 pt-4">' +
               '<button onclick="saveEditFixedExpense()" class="flex-1 bg-purple-500 text-white py-3 rounded-lg font-medium">저장</button>' +
@@ -6856,11 +7024,25 @@
       var fe = state.fixedExpenses.find(function(f) { return f.id === state.editingFixedExpenseId; });
       if (!fe) return;
 
-      var newAmount = getAmountValue('editFeAmount');
+      var newStartDate = document.getElementById('editFeStartDate').value;
       var newEndDate = document.getElementById('editFeEndDate').value;
+      var newPayDay = parseInt(document.getElementById('editFePayDay').value);
+      var newAmount = getAmountValue('editFeAmount');
+      var newPaymentMethod = document.getElementById('editFePaymentMethod').value;
+      var newCategory = document.getElementById('editFeCategory').value;
+      var newMemo = document.getElementById('editFeMemo').value;
 
-      fe.amount = newAmount || fe.amount;
+      if (!newStartDate) { alert('시작날짜를 선택해주세요'); return; }
+      if (!newAmount || newAmount <= 0) { alert('금액을 입력해주세요'); return; }
+      if (!newCategory) { alert('카테고리를 선택해주세요'); return; }
+
+      fe.startDate = newStartDate;
       fe.endDate = newEndDate || null;
+      fe.payDay = newPayDay;
+      fe.amount = newAmount;
+      fe.paymentMethod = newPaymentMethod;
+      fe.category = newCategory;
+      fe.memo = newMemo;
 
       saveData();
       closeEditFixedExpenseModal();
