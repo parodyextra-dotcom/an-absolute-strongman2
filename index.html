@@ -79,8 +79,23 @@
       from { transform: translateY(100%); }
       to { transform: translateY(0); }
     }
+    @keyframes slideDown {
+      from { transform: translateY(0); opacity: 1; }
+      to { transform: translateY(100%); opacity: 0; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
     .numpad-modal {
       animation: slideUp 0.3s ease-out;
+    }
+    /* 거래 상세 모달 스타일 */
+    #transaction-detail-modal.closing {
+      animation: fadeOut 0.3s ease-out forwards;
+    }
+    #transaction-detail-modal.closing > div {
+      animation: slideDown 0.3s ease-out forwards;
     }
     .numpad-btn {
       display: flex;
@@ -3802,7 +3817,7 @@
       var expense = dayTransactions.filter(function(t) { return t.type === 'expense'; }).reduce(function(s, t) { return s + t.amount; }, 0);
 
       var txHtml = dayTransactions.map(function(t) {
-        return '<div class="flex justify-between items-center py-2 border-b last:border-b-0">' +
+        return '<div class="flex justify-between items-center py-2 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 rounded-lg transition-all px-2 -mx-2" onclick="closeDayPopup();showTransactionDetail(' + t.id + ')">' +
           '<div>' +
             '<div class="font-medium">' + t.category + '</div>' +
             '<div class="text-xs text-gray-500">' + (t.memo || '') + '</div>' +
@@ -3811,7 +3826,7 @@
             '<div class="font-bold ' + (t.type === 'income' ? 'text-green-600' : 'text-red-600') + '">' +
               (t.type === 'income' ? '+' : '-') + formatNumber(t.amount) + '원' +
             '</div>' +
-            '<button onclick="deleteTransaction(' + t.id + ');renderCalendar();" class="text-red-400 text-xs">삭제</button>' +
+            '<button onclick="event.stopPropagation();deleteTransaction(' + t.id + ');renderCalendar();" class="text-red-400 text-xs">삭제</button>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -3991,7 +4006,7 @@
               }
             }
             
-            return '<div class="border-b py-2 last:border-b-0">' +
+            return '<div class="border-b py-2 last:border-b-0 cursor-pointer hover:bg-gray-50 rounded-lg transition-all px-2 -mx-2" onclick="showTransactionDetail(' + t.id + ')">' +
               '<div class="flex justify-between items-center">' +
                 '<div class="flex-1">' +
                   '<div class="font-medium">' + t.category + '<span class="text-gray-500 text-sm ml-1">' + paymentInfo + '</span></div>' +
@@ -4001,14 +4016,257 @@
                   '<div class="font-bold ' + (t.type === 'income' ? 'text-green-600' : 'text-red-600') + '">' +
                     (t.type === 'income' ? '+' : '-') + formatNumber(t.amount) + '원' +
                   '</div>' +
-                  '<button onclick="editTransaction(' + t.id + ')" class="text-blue-500 text-sm px-1">수정</button>' +
-                  '<button onclick="deleteTransaction(' + t.id + ')" class="text-red-500 text-sm px-1">삭제</button>' +
+                  '<button onclick="event.stopPropagation();editTransaction(' + t.id + ')" class="text-blue-500 text-sm px-1">수정</button>' +
+                  '<button onclick="event.stopPropagation();deleteTransaction(' + t.id + ')" class="text-red-500 text-sm px-1">삭제</button>' +
                 '</div>' +
               '</div>' +
             '</div>';
           }).join('') +
         '</div>';
       }).join('');
+    }
+
+    // ========== 거래 상세내역 모달 ==========
+    function showTransactionDetail(id) {
+      var tx = state.transactions.find(function(t) { return t.id === id; });
+      if (!tx) return;
+      
+      // 모달 생성
+      renderTransactionDetailModal(tx);
+    }
+    
+    function closeTransactionDetailModal() {
+      var modal = document.getElementById('transaction-detail-modal');
+      if (modal) {
+        modal.classList.add('closing');
+        setTimeout(function() {
+          modal.remove();
+        }, 300);
+      }
+    }
+    
+    function renderTransactionDetailModal(tx) {
+      // 기존 모달 제거
+      var existing = document.getElementById('transaction-detail-modal');
+      if (existing) existing.remove();
+      
+      // 카테고리 스타일
+      var categoryStyles = {
+        '식비': { color: '#EF4444', emoji: '🍚', gradient: 'from-red-500 to-rose-600' },
+        '교통비': { color: '#F97316', emoji: '🚗', gradient: 'from-orange-500 to-amber-600' },
+        '통신비': { color: '#8B5CF6', emoji: '📱', gradient: 'from-violet-500 to-purple-600' },
+        '생활용품': { color: '#06B6D4', emoji: '🧴', gradient: 'from-cyan-500 to-teal-600' },
+        '의료비': { color: '#EC4899', emoji: '💊', gradient: 'from-pink-500 to-rose-600' },
+        '교육비': { color: '#3B82F6', emoji: '📚', gradient: 'from-blue-500 to-indigo-600' },
+        '문화생활': { color: '#10B981', emoji: '🎬', gradient: 'from-emerald-500 to-green-600' },
+        '아버지': { color: '#6366F1', emoji: '👨‍🦳', gradient: 'from-indigo-500 to-purple-600' },
+        '지환': { color: '#14B8A6', emoji: '👦', gradient: 'from-teal-500 to-cyan-600' },
+        '다혜': { color: '#F472B6', emoji: '👧', gradient: 'from-pink-400 to-rose-500' },
+        '다연': { color: '#A855F7', emoji: '👶', gradient: 'from-purple-500 to-violet-600' },
+        '보험료': { color: '#64748B', emoji: '🛡️', gradient: 'from-slate-500 to-gray-600' },
+        '외식비': { color: '#FB923C', emoji: '🍽️', gradient: 'from-orange-400 to-amber-500' },
+        '세금공과금': { color: '#475569', emoji: '📋', gradient: 'from-slate-600 to-gray-700' },
+        '주유비': { color: '#84CC16', emoji: '⛽', gradient: 'from-lime-500 to-green-600' },
+        '대출상환': { color: '#DC2626', emoji: '🏦', gradient: 'from-red-600 to-rose-700' },
+        '기타비': { color: '#9CA3AF', emoji: '📦', gradient: 'from-gray-500 to-slate-600' },
+        '월급': { color: '#10B981', emoji: '💰', gradient: 'from-emerald-500 to-green-600' },
+        '부수입': { color: '#06B6D4', emoji: '💵', gradient: 'from-cyan-500 to-teal-600' },
+        '상여금': { color: '#F59E0B', emoji: '🎁', gradient: 'from-amber-500 to-yellow-600' },
+        '투자수익': { color: '#8B5CF6', emoji: '📈', gradient: 'from-violet-500 to-purple-600' },
+        '기타수입': { color: '#6366F1', emoji: '💎', gradient: 'from-indigo-500 to-blue-600' }
+      };
+      
+      var style = categoryStyles[tx.category] || { color: '#9CA3AF', emoji: '📌', gradient: 'from-gray-500 to-slate-600' };
+      var isIncome = tx.type === 'income';
+      var isExpense = tx.type === 'expense';
+      
+      // 날짜 포맷팅
+      var txDate = new Date(tx.date);
+      var weekDays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+      var formattedDate = txDate.getFullYear() + '년 ' + (txDate.getMonth() + 1) + '월 ' + txDate.getDate() + '일 ' + weekDays[txDate.getDay()];
+      
+      // 결제수단 정보
+      var paymentMethodLabel = '';
+      var paymentMethodIcon = '';
+      if (isExpense) {
+        if (tx.paymentMethod === 'card') {
+          paymentMethodLabel = '카드 결제';
+          paymentMethodIcon = '💳';
+        } else if (tx.paymentMethod === 'cash') {
+          paymentMethodLabel = '현금 결제';
+          paymentMethodIcon = '💵';
+        } else {
+          paymentMethodLabel = '기타 결제';
+          paymentMethodIcon = '📝';
+        }
+      }
+      
+      // 할부 정보
+      var installmentHtml = '';
+      if (isExpense && tx.paymentMethod === 'card') {
+        if (tx.installmentInfo) {
+          var progressPercent = (tx.installmentInfo.current / tx.installmentInfo.total) * 100;
+          installmentHtml = '<div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">' +
+            '<div class="flex items-center justify-between mb-3">' +
+              '<div class="flex items-center gap-2">' +
+                '<span class="text-xl">📅</span>' +
+                '<span class="font-bold text-blue-800">할부 정보</span>' +
+              '</div>' +
+              '<span class="bg-blue-500 text-white text-xs px-3 py-1 rounded-full font-bold">' + tx.installmentInfo.current + '/' + tx.installmentInfo.total + ' 회차</span>' +
+            '</div>' +
+            '<div class="mb-2">' +
+              '<div class="flex justify-between text-sm mb-1">' +
+                '<span class="text-blue-600">진행률</span>' +
+                '<span class="font-bold text-blue-700">' + progressPercent.toFixed(0) + '%</span>' +
+              '</div>' +
+              '<div class="w-full bg-blue-200 rounded-full h-3 overflow-hidden">' +
+                '<div class="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full transition-all" style="width: ' + progressPercent + '%"></div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="text-sm text-blue-600">월 납부액: <span class="font-bold text-blue-800">' + formatNumber(tx.amount) + '원</span></div>' +
+          '</div>';
+        } else if (tx.installment && tx.installment > 1) {
+          var now = new Date();
+          var monthsPassed = (now.getFullYear() - txDate.getFullYear()) * 12 + (now.getMonth() - txDate.getMonth());
+          var currentInstallment = Math.min(monthsPassed + 1, tx.installment);
+          var progressPercent = (currentInstallment / tx.installment) * 100;
+          installmentHtml = '<div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">' +
+            '<div class="flex items-center justify-between mb-3">' +
+              '<div class="flex items-center gap-2">' +
+                '<span class="text-xl">📅</span>' +
+                '<span class="font-bold text-blue-800">할부 정보</span>' +
+              '</div>' +
+              '<span class="bg-blue-500 text-white text-xs px-3 py-1 rounded-full font-bold">' + currentInstallment + '/' + tx.installment + ' 회차</span>' +
+            '</div>' +
+            '<div class="mb-2">' +
+              '<div class="flex justify-between text-sm mb-1">' +
+                '<span class="text-blue-600">진행률</span>' +
+                '<span class="font-bold text-blue-700">' + progressPercent.toFixed(0) + '%</span>' +
+              '</div>' +
+              '<div class="w-full bg-blue-200 rounded-full h-3 overflow-hidden">' +
+                '<div class="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full transition-all" style="width: ' + progressPercent + '%"></div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="text-sm text-blue-600">월 납부액: <span class="font-bold text-blue-800">' + formatNumber(tx.amount) + '원</span></div>' +
+          '</div>';
+        }
+      }
+      
+      // 필요/불필요 지출 정보
+      var necessityHtml = '';
+      if (isExpense) {
+        if (tx.isNecessary) {
+          necessityHtml = '<div class="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-200">' +
+            '<span class="text-lg">✅</span>' +
+            '<span class="text-emerald-700 font-medium">필요 지출</span>' +
+          '</div>';
+        } else {
+          necessityHtml = '<div class="flex items-center gap-2 bg-orange-50 px-4 py-2 rounded-lg border border-orange-200">' +
+            '<span class="text-lg">⚠️</span>' +
+            '<span class="text-orange-700 font-medium">불필요 지출</span>' +
+          '</div>';
+        }
+      }
+      
+      // 고정비 여부
+      var fixedExpenseHtml = '';
+      if (tx.isFixedExpense) {
+        fixedExpenseHtml = '<div class="flex items-center gap-2 bg-purple-50 px-4 py-2 rounded-lg border border-purple-200">' +
+          '<span class="text-lg">📅</span>' +
+          '<span class="text-purple-700 font-medium">월 고정비</span>' +
+        '</div>';
+      }
+      
+      // 모달 HTML
+      var modalHtml = '<div id="transaction-detail-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-end sm:items-center justify-center z-50" onclick="if(event.target===this)closeTransactionDetailModal()" style="animation: fadeInOverlay 0.3s ease-out;">' +
+        '<div class="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md max-h-[90vh] overflow-hidden shadow-2xl" style="animation: slideUp 0.3s ease-out;">' +
+          
+          // 헤더 - 카테고리 색상에 맞는 그라데이션
+          '<div class="bg-gradient-to-r ' + style.gradient + ' p-6 text-white relative">' +
+            '<button onclick="closeTransactionDetailModal()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 flex items-center justify-center transition backdrop-blur-sm">' +
+              '<span class="text-white text-xl font-light">✕</span>' +
+            '</button>' +
+            '<div class="text-center">' +
+              '<div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-white bg-opacity-20 backdrop-blur-sm flex items-center justify-center shadow-lg">' +
+                '<span class="text-5xl">' + style.emoji + '</span>' +
+              '</div>' +
+              '<div class="text-lg font-medium text-white text-opacity-90 mb-1">' + tx.category + '</div>' +
+              '<div class="text-4xl font-bold tracking-tight">' +
+                (isIncome ? '+' : '-') + formatNumber(tx.amount) + '<span class="text-xl font-normal ml-1">원</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          
+          // 콘텐츠 영역
+          '<div class="p-5 space-y-4 overflow-y-auto" style="max-height: calc(90vh - 200px);">' +
+            
+            // 유형 및 상태 태그
+            '<div class="flex flex-wrap gap-2">' +
+              '<div class="flex items-center gap-2 ' + (isIncome ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200') + ' px-4 py-2 rounded-lg border">' +
+                '<span class="text-lg">' + (isIncome ? '💰' : '💸') + '</span>' +
+                '<span class="' + (isIncome ? 'text-emerald-700' : 'text-rose-700') + ' font-medium">' + (isIncome ? '수입' : '지출') + '</span>' +
+              '</div>' +
+              necessityHtml +
+              fixedExpenseHtml +
+            '</div>' +
+            
+            // 상세 정보 카드
+            '<div class="bg-gray-50 rounded-xl p-4 space-y-4">' +
+              
+              // 날짜
+              '<div class="flex items-center gap-3">' +
+                '<div class="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">' +
+                  '<span class="text-xl">📆</span>' +
+                '</div>' +
+                '<div>' +
+                  '<div class="text-xs text-gray-500 mb-0.5">거래일</div>' +
+                  '<div class="font-semibold text-gray-800">' + formattedDate + '</div>' +
+                '</div>' +
+              '</div>' +
+              
+              // 결제수단 (지출일 경우만)
+              (isExpense ? '<div class="flex items-center gap-3">' +
+                '<div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">' +
+                  '<span class="text-xl">' + paymentMethodIcon + '</span>' +
+                '</div>' +
+                '<div>' +
+                  '<div class="text-xs text-gray-500 mb-0.5">결제수단</div>' +
+                  '<div class="font-semibold text-gray-800">' + paymentMethodLabel + '</div>' +
+                '</div>' +
+              '</div>' : '') +
+              
+              // 메모 (있는 경우만)
+              (tx.memo ? '<div class="flex items-start gap-3">' +
+                '<div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">' +
+                  '<span class="text-xl">📝</span>' +
+                '</div>' +
+                '<div class="flex-1">' +
+                  '<div class="text-xs text-gray-500 mb-0.5">메모</div>' +
+                  '<div class="font-semibold text-gray-800 break-words">' + tx.memo + '</div>' +
+                '</div>' +
+              '</div>' : '') +
+              
+            '</div>' +
+            
+            // 할부 정보 (있는 경우만)
+            installmentHtml +
+            
+            // 액션 버튼
+            '<div class="flex gap-3 pt-2">' +
+              '<button onclick="closeTransactionDetailModal();editTransaction(' + tx.id + ')" class="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg hover:shadow-xl transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2">' +
+                '<span>✏️</span> 수정하기' +
+              '</button>' +
+              '<button onclick="closeTransactionDetailModal();deleteTransaction(' + tx.id + ')" class="flex-1 bg-gradient-to-r from-red-500 to-rose-600 text-white py-3.5 rounded-xl font-bold shadow-lg hover:shadow-xl transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2">' +
+                '<span>🗑️</span> 삭제하기' +
+              '</button>' +
+            '</div>' +
+            
+          '</div>' +
+          
+        '</div>' +
+      '</div>';
+      
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
 
     function deleteTransaction(id) {
