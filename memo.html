@@ -7629,10 +7629,10 @@
             <div class="backup-modal-body">
                 <div class="backup-option" onclick="exportBackup()">
                     <div class="backup-option-icon download">
-                        <i class="fas fa-download"></i>
+                        <i class="fas fa-share-alt"></i>
                     </div>
-                    <h3>데이터 백업하기</h3>
-                    <p>모든 메모와 카테고리를 파일로 저장합니다.</p>
+                    <h3>JSON 데이터 백업하기</h3>
+                    <p>모든 메모와 카테고리를 JSON 파일로 공유/저장합니다.</p>
                 </div>
                 
                 <div class="backup-option" onclick="document.getElementById('backupFileInput').click()">
@@ -12846,7 +12846,7 @@
         });
         
         // 데이터 백업하기 (내보내기)
-        function exportBackup() {
+        async function exportBackup() {
             const backupData = {
                 version: '1.0',
                 exportDate: new Date().toISOString(),
@@ -12873,14 +12873,112 @@
             };
             
             const jsonString = JSON.stringify(backupData, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            
             const now = new Date();
             const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
             const timeStr = now.toTimeString().slice(0, 5).replace(':', '');
             const filename = `메모장_백업_${dateStr}_${timeStr}.json`;
+            const shareTitle = '절대강자 메모장 백업';
+            const shareText = `메모장 백업 데이터 (${now.toLocaleString('ko-KR')})`;
             
+            // 1순위: Flutter WebView 환경 — Flutter 브릿지로 파일 공유
+            if (isFlutterWebView()) {
+                try {
+                    const shareData = {
+                        action: 'shareFile',
+                        title: shareTitle,
+                        text: shareText,
+                        filename: filename,
+                        mimeType: 'application/json',
+                        content: jsonString
+                    };
+                    
+                    let requestSent = false;
+                    
+                    if (window.flutter_inappwebview) {
+                        window.flutter_inappwebview.callHandler('shareFile', JSON.stringify(shareData));
+                        requestSent = true;
+                    }
+                    if (!requestSent && window.FlutterShareChannel) {
+                        window.FlutterShareChannel.postMessage(JSON.stringify(shareData));
+                        requestSent = true;
+                    }
+                    if (!requestSent && window.FlutterChannel) {
+                        window.FlutterChannel.postMessage(JSON.stringify(shareData));
+                        requestSent = true;
+                    }
+                    
+                    if (requestSent) {
+                        closeBackupModal();
+                        showToast('백업 데이터 공유를 요청했습니다!');
+                        return;
+                    }
+                } catch (err) {
+                    console.log('Flutter 파일 공유 실패, 대체 방식 시도:', err);
+                }
+                
+                // Flutter 브릿지 파일 공유 실패 시 — 기존 requestFlutterShare로 텍스트 공유 시도
+                const flutterShared = requestFlutterShare(shareTitle, jsonString, null, function() {
+                    // 폴백: 다운로드 방식
+                    exportBackupDownload(jsonString, filename);
+                });
+                
+                if (flutterShared) {
+                    closeBackupModal();
+                    showToast('백업 데이터 공유를 요청했습니다!');
+                    return;
+                }
+            }
+            
+            // 2순위: Web Share API — 파일 공유
+            if (navigator.share && navigator.canShare) {
+                try {
+                    const file = new File([jsonString], filename, { type: 'application/json' });
+                    const shareData = {
+                        title: shareTitle,
+                        text: shareText,
+                        files: [file]
+                    };
+                    
+                    if (navigator.canShare(shareData)) {
+                        await navigator.share(shareData);
+                        closeBackupModal();
+                        showToast('백업 데이터가 공유되었습니다!');
+                        return;
+                    }
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        return;
+                    }
+                    console.log('Share API 파일 공유 실패, 대체 방식 시도:', err);
+                }
+            }
+            
+            // 3순위: Web Share API — 텍스트 공유
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: shareTitle,
+                        text: jsonString
+                    });
+                    closeBackupModal();
+                    showToast('백업 데이터가 공유되었습니다!');
+                    return;
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        return;
+                    }
+                    console.log('Share API 텍스트 공유 실패, 다운로드로 대체:', err);
+                }
+            }
+            
+            // 4순위: 파일 다운로드 (최종 폴백)
+            exportBackupDownload(jsonString, filename);
+        }
+        
+        // 백업 파일 다운로드 헬퍼 함수
+        function exportBackupDownload(jsonString, filename) {
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
             link.download = filename;
