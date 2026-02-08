@@ -13209,46 +13209,165 @@
 
         // ========== JSON 가져오기 (File Picker / Flutter 핸들러) ==========
         function importBackupFilePicker() {
-            // Flutter WebView 환경에서는 Flutter 파일 피커 호출
+            // Flutter WebView 환경에서는 Flutter에 파일 선택 요청만 보냄
+            // (JS에서 FileReader 사용 불가 → Flutter가 파일 읽기 담당)
             if (isFlutterWebView()) {
-                try {
-                    // flutter_inappwebview 핸들러 사용 (권장)
-                    if (window.flutter_inappwebview) {
-                        window.flutter_inappwebview.callHandler('pickBackupFile', '');
-                        showToast('파일 선택기를 여는 중...');
-                        return;
-                    }
-                    
-                    // 대체 채널들
-                    if (window.FlutterFilePickerChannel) {
-                        window.FlutterFilePickerChannel.postMessage(JSON.stringify({
-                            action: 'pickBackupFile',
-                            mimeType: 'application/json'
-                        }));
-                        showToast('파일 선택기를 여는 중...');
-                        return;
-                    }
-                    
-                    if (window.FlutterChannel) {
-                        window.FlutterChannel.postMessage(JSON.stringify({
-                            action: 'pickBackupFile',
-                            mimeType: 'application/json'
-                        }));
-                        showToast('파일 선택기를 여는 중...');
-                        return;
-                    }
-                } catch (err) {
-                    console.log('Flutter 파일 피커 요청 실패:', err);
-                }
+                requestRestore();
+                return;
             }
             
-            // 일반 웹 환경 또는 Flutter 핸들러 없는 경우 - 기본 File Picker 사용
+            // 일반 웹 환경에서만 기본 File Picker 사용
             var fileInput = document.getElementById('backupFileInput');
             fileInput.value = '';
             fileInput.click();
         }
+        
+        // ========== Flutter WebView 전용: 파일 선택 요청 ==========
+        // Flutter에 파일 피커 요청만 보내고, 실제 파일 읽기는 Flutter가 수행
+        // Flutter에서 파일 읽기 완료 후 restoreFromFlutter(jsonString) 호출
+        function requestRestore() {
+            try {
+                // flutter_inappwebview 핸들러 사용 (권장)
+                if (window.flutter_inappwebview) {
+                    window.flutter_inappwebview.callHandler('restoreRequest');
+                    showToast('파일 선택기를 여는 중...');
+                    return;
+                }
+                
+                // 대체 채널들
+                if (window.FlutterFilePickerChannel) {
+                    window.FlutterFilePickerChannel.postMessage(JSON.stringify({
+                        action: 'restoreRequest',
+                        mimeType: 'application/json'
+                    }));
+                    showToast('파일 선택기를 여는 중...');
+                    return;
+                }
+                
+                if (window.FlutterChannel) {
+                    window.FlutterChannel.postMessage(JSON.stringify({
+                        action: 'restoreRequest',
+                        mimeType: 'application/json'
+                    }));
+                    showToast('파일 선택기를 여는 중...');
+                    return;
+                }
+                
+                // Flutter 핸들러가 없는 경우
+                showToast('Flutter 파일 피커를 사용할 수 없습니다.');
+            } catch (err) {
+                console.log('Flutter 파일 피커 요청 실패:', err);
+                showToast('파일 선택 요청 중 오류가 발생했습니다.');
+            }
+        }
+        
+        // ========== Flutter WebView 전용: Flutter에서 받은 데이터로 복원 ==========
+        // Flutter에서 FilePicker로 JSON 파일을 읽은 후 이 함수를 호출
+        // 사용법 (Flutter Dart):
+        //   webViewController.evaluateJavascript(
+        //     source: "restoreFromFlutter(${jsonEncode(jsonString)})"
+        //   );
+        window.restoreFromFlutter = async function(jsonString) {
+            try {
+                // 문자열 파싱
+                var backupData;
+                if (typeof jsonString === 'string') {
+                    backupData = JSON.parse(jsonString);
+                } else if (typeof jsonString === 'object' && jsonString !== null) {
+                    backupData = jsonString;
+                } else {
+                    throw new Error('유효하지 않은 데이터 형식입니다.');
+                }
+                
+                // 유효성 검사
+                if (!backupData.appName || backupData.appName !== '절대강자 메모장') {
+                    throw new Error('유효하지 않은 백업 파일입니다.');
+                }
+                
+                if (!backupData.data) {
+                    throw new Error('백업 데이터가 없습니다.');
+                }
+                
+                // 커스텀 확인 다이얼로그
+                var exportDate = new Date(backupData.exportDate).toLocaleString('ko-KR');
+                var result = await showCustomDialog({
+                    iconType: 'info',
+                    title: '데이터 복원',
+                    message: '이 백업 파일을 복원하시겠습니까?\n\n📅 백업 일시: ' + exportDate + '\n\n⚠️ 현재 데이터가 모두 덮어씌워집니다.',
+                    confirmText: '복원하기',
+                    cancelText: '취소'
+                });
+                
+                if (!result.confirmed) {
+                    return { success: false, message: '사용자가 복원을 취소했습니다.' };
+                }
+                
+                // 데이터 복원
+                var bd = backupData.data;
+                
+                var restoreKeys = ['memos', 'todos', 'todoHistory', 'schedules', 'travels', 
+                                   'restaurants', 'hospitals', 'sitemanages', 'bankaccounts', 
+                                   'ideas', 'goals', 'cultures', 'people', 
+                                   'customCategories', 'customCategoryMemos'];
+                
+                for (var i = 0; i < restoreKeys.length; i++) {
+                    var key = restoreKeys[i];
+                    if (bd[key] !== undefined) {
+                        data[key] = bd[key];
+                        localStorage.setItem(key, JSON.stringify(bd[key]));
+                    }
+                }
+                
+                if (bd.lastTodoDate) {
+                    data.lastTodoDate = bd.lastTodoDate;
+                    localStorage.setItem('lastTodoDate', bd.lastTodoDate);
+                }
+                if (bd.hiddenMenus) {
+                    hiddenMenus = bd.hiddenMenus;
+                    localStorage.setItem('hiddenMenus', JSON.stringify(bd.hiddenMenus));
+                }
+                
+                // IndexedDB에도 전체 백업 저장
+                saveAllToIndexedDB();
+                
+                // 화면 갱신
+                renderCustomCategories();
+                applyMenuVisibility();
+                
+                closeBackupModal();
+                showToast('데이터가 성공적으로 복원되었습니다!');
+                
+                // 페이지 새로고침
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+                
+                return { success: true, message: '복원 완료' };
+                
+            } catch (error) {
+                console.error('restoreFromFlutter 오류:', error);
+                await showCustomDialog({
+                    iconType: 'danger',
+                    title: '복원 오류',
+                    message: '백업 파일을 복원하는 중 오류가 발생했습니다.\n\n' + error.message,
+                    confirmText: '확인',
+                    cancelText: '닫기'
+                });
+                return { success: false, message: error.message };
+            }
+        };
 
+        // ========== 웹 브라우저 전용: 파일 선택 후 복원 ==========
+        // Flutter WebView에서는 이 함수가 호출되지 않음 (FileReader 미지원)
+        // 웹 브라우저에서만 동작
         async function handleImportFile(event) {
+            // Flutter WebView 환경에서는 이 함수 사용 안 함
+            if (isFlutterWebView()) {
+                showToast('Flutter 환경에서는 파일 가져오기를 사용할 수 없습니다.');
+                event.target.value = '';
+                return;
+            }
+            
             var file = event.target.files[0];
             if (!file) return;
             
