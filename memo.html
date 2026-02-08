@@ -13229,7 +13229,7 @@
             try {
                 // flutter_inappwebview 핸들러 사용 (권장)
                 if (window.flutter_inappwebview) {
-                    window.flutter_inappwebview.callHandler('restoreRequest');
+                    window.flutter_inappwebview.callHandler('restore');
                     showToast('파일 선택기를 여는 중...');
                     return;
                 }
@@ -13237,7 +13237,7 @@
                 // 대체 채널들
                 if (window.FlutterFilePickerChannel) {
                     window.FlutterFilePickerChannel.postMessage(JSON.stringify({
-                        action: 'restoreRequest',
+                        action: 'restore',
                         mimeType: 'application/json'
                     }));
                     showToast('파일 선택기를 여는 중...');
@@ -13246,7 +13246,7 @@
                 
                 if (window.FlutterChannel) {
                     window.FlutterChannel.postMessage(JSON.stringify({
-                        action: 'restoreRequest',
+                        action: 'restore',
                         mimeType: 'application/json'
                     }));
                     showToast('파일 선택기를 여는 중...');
