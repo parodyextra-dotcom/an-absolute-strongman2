@@ -13334,6 +13334,92 @@
             reader.readAsText(file);
         }
         
+        // ========== Flutter WebView에서 Share Intent로 받은 JSON 복원 ==========
+        // Flutter에서 receive_sharing_intent로 JSON 파일을 받은 후 호출
+        // 사용법: window.restoreData(jsonString) 또는 window.restoreData(parsedObject)
+        window.restoreData = async function(jsonData) {
+            try {
+                // 문자열이면 파싱, 객체면 그대로 사용
+                var backupData;
+                if (typeof jsonData === 'string') {
+                    backupData = JSON.parse(jsonData);
+                } else if (typeof jsonData === 'object' && jsonData !== null) {
+                    backupData = jsonData;
+                } else {
+                    throw new Error('유효하지 않은 데이터 형식입니다.');
+                }
+                
+                // 유효성 검사
+                if (!backupData.appName || backupData.appName !== '절대강자 메모장') {
+                    throw new Error('유효하지 않은 백업 파일입니다.');
+                }
+                
+                if (!backupData.data) {
+                    throw new Error('백업 데이터가 없습니다.');
+                }
+                
+                // 커스텀 확인 다이얼로그
+                var exportDate = new Date(backupData.exportDate).toLocaleString('ko-KR');
+                var result = await showCustomDialog({
+                    iconType: 'info',
+                    title: '데이터 복원',
+                    message: '공유받은 백업 파일을 복원하시겠습니까?\n\n📅 백업 일시: ' + exportDate + '\n\n⚠️ 현재 데이터가 모두 덮어씌워집니다.',
+                    confirmText: '복원하기',
+                    cancelText: '취소'
+                });
+                
+                if (!result.confirmed) {
+                    return { success: false, message: '사용자가 복원을 취소했습니다.' };
+                }
+                
+                // 데이터 복원
+                var bd = backupData.data;
+                
+                var restoreKeys = ['memos', 'todos', 'todoHistory', 'schedules', 'travels', 
+                                   'restaurants', 'hospitals', 'sitemanages', 'bankaccounts', 
+                                   'ideas', 'goals', 'cultures', 'people', 
+                                   'customCategories', 'customCategoryMemos'];
+                
+                for (var i = 0; i < restoreKeys.length; i++) {
+                    var key = restoreKeys[i];
+                    if (bd[key] !== undefined) {
+                        data[key] = bd[key];
+                        localStorage.setItem(key, JSON.stringify(bd[key]));
+                    }
+                }
+                
+                if (bd.lastTodoDate) {
+                    data.lastTodoDate = bd.lastTodoDate;
+                    localStorage.setItem('lastTodoDate', bd.lastTodoDate);
+                }
+                if (bd.hiddenMenus) {
+                    hiddenMenus = bd.hiddenMenus;
+                    localStorage.setItem('hiddenMenus', JSON.stringify(bd.hiddenMenus));
+                }
+                
+                // IndexedDB에도 전체 백업 저장
+                saveAllToIndexedDB();
+                
+                // 화면 갱신
+                renderCustomCategories();
+                applyMenuVisibility();
+                
+                showToast('데이터가 성공적으로 복원되었습니다!');
+                
+                // 페이지 새로고침 (선택적)
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+                
+                return { success: true, message: '복원 완료' };
+                
+            } catch (error) {
+                console.error('restoreData 오류:', error);
+                showToast('복원 실패: ' + error.message);
+                return { success: false, message: error.message };
+            }
+        };
+        
         // ========== 모든 데이터 삭제 (커스텀 다이얼로그) ==========
         async function deleteAllDataCustom() {
             // 1단계: 경고 확인
