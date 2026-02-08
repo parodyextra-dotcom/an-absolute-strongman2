@@ -211,9 +211,139 @@
             margin-top: 2px;
         }
 
-        /* 파일 입력 숨김 */
-        #backupFileInput {
+        /* 커스텀 다이얼로그 스타일 */
+        .custom-dialog-overlay {
             display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .custom-dialog-overlay.active {
+            display: flex;
+        }
+
+        .custom-dialog {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 340px;
+            padding: 30px 25px 20px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        .custom-dialog-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin: 0 auto 16px;
+        }
+
+        .custom-dialog-icon.warning {
+            background: #fff3cd;
+            color: #e67e22;
+        }
+
+        .custom-dialog-icon.danger {
+            background: #ffebee;
+            color: #e74c3c;
+        }
+
+        .custom-dialog-icon.info {
+            background: #e3f2fd;
+            color: #2196f3;
+        }
+
+        .custom-dialog-icon.success {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .custom-dialog-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .custom-dialog-message {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            white-space: pre-line;
+        }
+
+        .custom-dialog-input-wrap {
+            margin-bottom: 18px;
+        }
+
+        .custom-dialog-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: 'Noto Sans KR', sans-serif;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .custom-dialog-input:focus {
+            border-color: #4aba7a;
+        }
+
+        .custom-dialog-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .custom-dialog-btn {
+            flex: 1;
+            padding: 13px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Noto Sans KR', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .custom-dialog-btn.cancel {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .custom-dialog-btn.cancel:hover {
+            background: #e0e0e0;
+        }
+
+        .custom-dialog-btn.confirm {
+            background: linear-gradient(135deg, #4aba7a 0%, #7fc9a5 100%);
+            color: white;
+        }
+
+        .custom-dialog-btn.confirm:hover {
+            opacity: 0.9;
+        }
+
+        .custom-dialog-btn.confirm.danger {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
         }
 
         /* 메뉴 관리 버튼 스타일 */
@@ -7300,7 +7430,7 @@
             <button class="menu-manage-btn" onclick="openMenuManageModal()" title="메뉴 관리">
                 <i class="fas fa-cog"></i>
             </button>
-            <button class="backup-btn" onclick="openBackupModal()" title="데이터 백업/복원">
+            <button class="backup-btn" onclick="openBackupModal()" title="데이터 관리">
                 <i class="fas fa-cloud"></i>
             </button>
             <h1>절대강자 메모장</h1>
@@ -7617,46 +7747,64 @@
         </div>
     </div>
 
-    <!-- 백업/복원 모달 -->
+    <!-- 데이터 관리 모달 -->
     <div class="backup-modal-overlay" id="backupModal">
         <div class="backup-modal">
             <div class="backup-modal-header">
-                <h2><i class="fas fa-cloud"></i> 데이터 백업/복원</h2>
+                <h2><i class="fas fa-database"></i> 데이터 관리</h2>
                 <button class="backup-modal-close" onclick="closeBackupModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="backup-modal-body">
-                <div class="backup-option" onclick="exportBackup()">
+                <div class="backup-option" onclick="exportBackupShare()">
                     <div class="backup-option-icon download">
                         <i class="fas fa-share-alt"></i>
                     </div>
-                    <h3>JSON 데이터 백업하기</h3>
-                    <p>모든 메모와 카테고리를 JSON 파일로 공유/저장합니다.</p>
+                    <h3>JSON 백업 내보내기</h3>
+                    <p>모든 메모와 카테고리를 JSON 파일로 공유합니다.</p>
                 </div>
                 
-                <div class="backup-option" onclick="document.getElementById('backupFileInput').click()">
+                <div class="backup-option" onclick="importBackupFilePicker()">
                     <div class="backup-option-icon upload">
-                        <i class="fas fa-upload"></i>
+                        <i class="fas fa-file-import"></i>
                     </div>
-                    <h3>데이터 가져오기</h3>
+                    <h3>JSON 가져오기</h3>
                     <p>백업 파일에서 데이터를 복원합니다.</p>
                 </div>
                 
-                <input type="file" id="backupFileInput" accept=".json" onchange="importBackup(event)">
+                <input type="file" id="backupFileInput" accept=".json" onchange="handleImportFile(event)" style="display:none;">
                 
-                <div class="backup-option delete-all-option" onclick="deleteAllData()">
+                <div class="backup-option delete-all-option" onclick="deleteAllDataCustom()">
                     <div class="backup-option-icon delete">
                         <i class="fas fa-trash-alt"></i>
                     </div>
                     <h3>모든 데이터 삭제</h3>
-                    <p>저장된 모든 메모와 메뉴를 삭제합니다.</p>
+                    <p>저장된 모든 메모와 메뉴를 영구 삭제합니다.</p>
                 </div>
                 
                 <div class="backup-info">
                     <i class="fas fa-info-circle"></i>
                     <span>가져오기 시 기존 데이터가 모두 덮어씌워집니다. 중요한 데이터는 먼저 백업해주세요.</span>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 커스텀 확인 다이얼로그 -->
+    <div class="custom-dialog-overlay" id="customDialogOverlay">
+        <div class="custom-dialog">
+            <div class="custom-dialog-icon" id="customDialogIcon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 class="custom-dialog-title" id="customDialogTitle">확인</h3>
+            <p class="custom-dialog-message" id="customDialogMessage">정말 진행하시겠습니까?</p>
+            <div class="custom-dialog-input-wrap" id="customDialogInputWrap" style="display:none;">
+                <input type="text" class="custom-dialog-input" id="customDialogInput" placeholder="">
+            </div>
+            <div class="custom-dialog-buttons">
+                <button class="custom-dialog-btn cancel" id="customDialogCancel" onclick="closeCustomDialog(false)">취소</button>
+                <button class="custom-dialog-btn confirm" id="customDialogConfirm" onclick="closeCustomDialog(true)">확인</button>
             </div>
         </div>
     </div>
@@ -12826,7 +12974,7 @@
             detailModal.classList.add('active');
         }
 
-        // ========== 백업/복원 기능 ==========
+        // ========== 데이터 관리 기능 ==========
         
         // 백업 모달 열기
         function openBackupModal() {
@@ -12844,10 +12992,91 @@
                 closeBackupModal();
             }
         });
-        
-        // 데이터 백업하기 (내보내기)
-        async function exportBackup() {
-            const backupData = {
+
+        // ========== 커스텀 다이얼로그 ==========
+        let customDialogResolve = null;
+
+        function showCustomDialog(options) {
+            return new Promise(function(resolve) {
+                customDialogResolve = resolve;
+                var overlay = document.getElementById('customDialogOverlay');
+                var iconEl = document.getElementById('customDialogIcon');
+                var titleEl = document.getElementById('customDialogTitle');
+                var msgEl = document.getElementById('customDialogMessage');
+                var inputWrap = document.getElementById('customDialogInputWrap');
+                var inputEl = document.getElementById('customDialogInput');
+                var confirmBtn = document.getElementById('customDialogConfirm');
+                var cancelBtn = document.getElementById('customDialogCancel');
+
+                // 아이콘 타입 설정
+                var iconType = options.iconType || 'warning';
+                iconEl.className = 'custom-dialog-icon ' + iconType;
+                var iconMap = {
+                    warning: 'fas fa-exclamation-triangle',
+                    danger: 'fas fa-skull-crossbones',
+                    info: 'fas fa-info-circle',
+                    success: 'fas fa-check-circle'
+                };
+                iconEl.innerHTML = '<i class="' + (iconMap[iconType] || iconMap.warning) + '"></i>';
+
+                titleEl.textContent = options.title || '확인';
+                msgEl.textContent = options.message || '';
+                
+                // 입력 필드 설정
+                if (options.showInput) {
+                    inputWrap.style.display = 'block';
+                    inputEl.value = '';
+                    inputEl.placeholder = options.inputPlaceholder || '';
+                    setTimeout(function() { inputEl.focus(); }, 300);
+                } else {
+                    inputWrap.style.display = 'none';
+                }
+
+                // 확인 버튼 스타일
+                confirmBtn.className = 'custom-dialog-btn confirm' + (options.confirmDanger ? ' danger' : '');
+                confirmBtn.textContent = options.confirmText || '확인';
+                cancelBtn.textContent = options.cancelText || '취소';
+
+                overlay.classList.add('active');
+            });
+        }
+
+        function closeCustomDialog(confirmed) {
+            var overlay = document.getElementById('customDialogOverlay');
+            overlay.classList.remove('active');
+            if (customDialogResolve) {
+                var inputEl = document.getElementById('customDialogInput');
+                var inputWrap = document.getElementById('customDialogInputWrap');
+                var result = {
+                    confirmed: confirmed,
+                    inputValue: (inputWrap.style.display !== 'none') ? inputEl.value : null
+                };
+                customDialogResolve(result);
+                customDialogResolve = null;
+            }
+        }
+
+        // 다이얼로그 외부 클릭 시 닫기
+        document.getElementById('customDialogOverlay')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCustomDialog(false);
+            }
+        });
+
+        // Enter 키로 확인, Escape 키로 취소
+        document.getElementById('customDialogInput')?.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                closeCustomDialog(true);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                closeCustomDialog(false);
+            }
+        });
+
+        // ========== JSON 백업 내보내기 (Share API 전용) ==========
+        async function exportBackupShare() {
+            var backupData = {
                 version: '1.0',
                 exportDate: new Date().toISOString(),
                 appName: '절대강자 메모장',
@@ -12872,18 +13101,18 @@
                 }
             };
             
-            const jsonString = JSON.stringify(backupData, null, 2);
-            const now = new Date();
-            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-            const timeStr = now.toTimeString().slice(0, 5).replace(':', '');
-            const filename = `메모장_백업_${dateStr}_${timeStr}.json`;
-            const shareTitle = '절대강자 메모장 백업';
-            const shareText = `메모장 백업 데이터 (${now.toLocaleString('ko-KR')})`;
+            var jsonString = JSON.stringify(backupData, null, 2);
+            var now = new Date();
+            var dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+            var timeStr = now.toTimeString().slice(0, 5).replace(':', '');
+            var filename = '메모장_백업_' + dateStr + '_' + timeStr + '.json';
+            var shareTitle = '절대강자 메모장 백업';
+            var shareText = '메모장 백업 데이터 (' + now.toLocaleString('ko-KR') + ')';
             
             // 1순위: Flutter WebView 환경 — Flutter 브릿지로 파일 공유
             if (isFlutterWebView()) {
                 try {
-                    const shareData = {
+                    var flutterShareData = {
                         action: 'shareFile',
                         title: shareTitle,
                         text: shareText,
@@ -12892,18 +13121,18 @@
                         content: jsonString
                     };
                     
-                    let requestSent = false;
+                    var requestSent = false;
                     
                     if (window.flutter_inappwebview) {
-                        window.flutter_inappwebview.callHandler('shareFile', JSON.stringify(shareData));
+                        window.flutter_inappwebview.callHandler('shareFile', JSON.stringify(flutterShareData));
                         requestSent = true;
                     }
                     if (!requestSent && window.FlutterShareChannel) {
-                        window.FlutterShareChannel.postMessage(JSON.stringify(shareData));
+                        window.FlutterShareChannel.postMessage(JSON.stringify(flutterShareData));
                         requestSent = true;
                     }
                     if (!requestSent && window.FlutterChannel) {
-                        window.FlutterChannel.postMessage(JSON.stringify(shareData));
+                        window.FlutterChannel.postMessage(JSON.stringify(flutterShareData));
                         requestSent = true;
                     }
                     
@@ -12913,13 +13142,13 @@
                         return;
                     }
                 } catch (err) {
-                    console.log('Flutter 파일 공유 실패, 대체 방식 시도:', err);
+                    console.log('Flutter 파일 공유 실패, Share API 시도:', err);
                 }
                 
-                // Flutter 브릿지 파일 공유 실패 시 — 기존 requestFlutterShare로 텍스트 공유 시도
-                const flutterShared = requestFlutterShare(shareTitle, jsonString, null, function() {
-                    // 폴백: 다운로드 방식
-                    exportBackupDownload(jsonString, filename);
+                // Flutter 브릿지 실패 시 텍스트 공유 시도
+                var flutterShared = requestFlutterShare(shareTitle, jsonString, null, function() {
+                    // Share API 폴백으로 이동
+                    tryWebShareAPI(jsonString, filename, shareTitle, shareText);
                 });
                 
                 if (flutterShared) {
@@ -12929,11 +13158,17 @@
                 }
             }
             
-            // 2순위: Web Share API — 파일 공유
+            // 2순위: Web Share API
+            await tryWebShareAPI(jsonString, filename, shareTitle, shareText);
+        }
+        
+        // Web Share API 시도 (파일 → 텍스트 → 클립보드 폴백)
+        async function tryWebShareAPI(jsonString, filename, shareTitle, shareText) {
+            // 파일 공유 시도
             if (navigator.share && navigator.canShare) {
                 try {
-                    const file = new File([jsonString], filename, { type: 'application/json' });
-                    const shareData = {
+                    var file = new File([jsonString], filename, { type: 'application/json' });
+                    var shareData = {
                         title: shareTitle,
                         text: shareText,
                         files: [file]
@@ -12946,14 +13181,12 @@
                         return;
                     }
                 } catch (err) {
-                    if (err.name === 'AbortError') {
-                        return;
-                    }
-                    console.log('Share API 파일 공유 실패, 대체 방식 시도:', err);
+                    if (err.name === 'AbortError') return;
+                    console.log('Share API 파일 공유 실패:', err);
                 }
             }
             
-            // 3순위: Web Share API — 텍스트 공유
+            // 텍스트 공유 시도
             if (navigator.share) {
                 try {
                     await navigator.share({
@@ -12964,42 +13197,56 @@
                     showToast('백업 데이터가 공유되었습니다!');
                     return;
                 } catch (err) {
-                    if (err.name === 'AbortError') {
-                        return;
-                    }
-                    console.log('Share API 텍스트 공유 실패, 다운로드로 대체:', err);
+                    if (err.name === 'AbortError') return;
+                    console.log('Share API 텍스트 공유 실패:', err);
                 }
             }
             
-            // 4순위: 파일 다운로드 (최종 폴백)
-            exportBackupDownload(jsonString, filename);
-        }
-        
-        // 백업 파일 다운로드 헬퍼 함수
-        function exportBackupDownload(jsonString, filename) {
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            // 최종 폴백: 클립보드 복사
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(jsonString);
+                    closeBackupModal();
+                    showToast('공유가 지원되지 않아 클립보드에 복사되었습니다.\n메모장 등에 붙여넣기 후 .json으로 저장하세요.');
+                    return;
+                }
+            } catch (err) {
+                console.log('클립보드 복사 실패:', err);
+            }
             
-            closeBackupModal();
-            showToast('백업 파일이 다운로드되었습니다!');
+            // 정말 최종 폴백: textarea 선택 방식
+            var textarea = document.createElement('textarea');
+            textarea.value = jsonString;
+            textarea.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                closeBackupModal();
+                showToast('클립보드에 복사되었습니다.\n메모장 등에 붙여넣기 후 .json으로 저장하세요.');
+            } catch (err) {
+                closeBackupModal();
+                showToast('공유 기능을 사용할 수 없습니다.');
+            }
+            document.body.removeChild(textarea);
         }
-        
-        // 데이터 가져오기 (복원)
-        function importBackup(event) {
-            const file = event.target.files[0];
+
+        // ========== JSON 가져오기 (File Picker) ==========
+        function importBackupFilePicker() {
+            // File Picker로 파일 선택
+            var fileInput = document.getElementById('backupFileInput');
+            fileInput.value = '';
+            fileInput.click();
+        }
+
+        async function handleImportFile(event) {
+            var file = event.target.files[0];
             if (!file) return;
             
-            const reader = new FileReader();
-            reader.onload = function(e) {
+            var reader = new FileReader();
+            reader.onload = async function(e) {
                 try {
-                    const backupData = JSON.parse(e.target.result);
+                    var backupData = JSON.parse(e.target.result);
                     
                     // 유효성 검사
                     if (!backupData.appName || backupData.appName !== '절대강자 메모장') {
@@ -13010,79 +13257,40 @@
                         throw new Error('백업 데이터가 없습니다.');
                     }
                     
-                    // 확인 다이얼로그
-                    const exportDate = new Date(backupData.exportDate).toLocaleString('ko-KR');
-                    if (!confirm(`이 백업 파일을 복원하시겠습니까?\n\n백업 일시: ${exportDate}\n\n※ 현재 데이터가 모두 덮어씌워집니다.`)) {
+                    // 커스텀 확인 다이얼로그
+                    var exportDate = new Date(backupData.exportDate).toLocaleString('ko-KR');
+                    var result = await showCustomDialog({
+                        iconType: 'info',
+                        title: '데이터 복원',
+                        message: '이 백업 파일을 복원하시겠습니까?\n\n📅 백업 일시: ' + exportDate + '\n\n⚠️ 현재 데이터가 모두 덮어씌워집니다.',
+                        confirmText: '복원하기',
+                        cancelText: '취소'
+                    });
+                    
+                    if (!result.confirmed) {
                         event.target.value = '';
                         return;
                     }
                     
                     // 데이터 복원
-                    const bd = backupData.data;
+                    var bd = backupData.data;
                     
-                    if (bd.memos) {
-                        data.memos = bd.memos;
-                        localStorage.setItem('memos', JSON.stringify(bd.memos));
+                    var restoreKeys = ['memos', 'todos', 'todoHistory', 'schedules', 'travels', 
+                                       'restaurants', 'hospitals', 'sitemanages', 'bankaccounts', 
+                                       'ideas', 'goals', 'cultures', 'people', 
+                                       'customCategories', 'customCategoryMemos'];
+                    
+                    for (var i = 0; i < restoreKeys.length; i++) {
+                        var key = restoreKeys[i];
+                        if (bd[key] !== undefined) {
+                            data[key] = bd[key];
+                            localStorage.setItem(key, JSON.stringify(bd[key]));
+                        }
                     }
-                    if (bd.todos) {
-                        data.todos = bd.todos;
-                        localStorage.setItem('todos', JSON.stringify(bd.todos));
-                    }
-                    if (bd.todoHistory) {
-                        data.todoHistory = bd.todoHistory;
-                        localStorage.setItem('todoHistory', JSON.stringify(bd.todoHistory));
-                    }
+                    
                     if (bd.lastTodoDate) {
                         data.lastTodoDate = bd.lastTodoDate;
                         localStorage.setItem('lastTodoDate', bd.lastTodoDate);
-                    }
-                    if (bd.schedules) {
-                        data.schedules = bd.schedules;
-                        localStorage.setItem('schedules', JSON.stringify(bd.schedules));
-                    }
-                    if (bd.travels) {
-                        data.travels = bd.travels;
-                        localStorage.setItem('travels', JSON.stringify(bd.travels));
-                    }
-                    if (bd.restaurants) {
-                        data.restaurants = bd.restaurants;
-                        localStorage.setItem('restaurants', JSON.stringify(bd.restaurants));
-                    }
-                    if (bd.hospitals) {
-                        data.hospitals = bd.hospitals;
-                        localStorage.setItem('hospitals', JSON.stringify(bd.hospitals));
-                    }
-                    if (bd.ideas) {
-                        data.ideas = bd.ideas;
-                        localStorage.setItem('ideas', JSON.stringify(bd.ideas));
-                    }
-                    if (bd.sitemanages) {
-                        data.sitemanages = bd.sitemanages;
-                        localStorage.setItem('sitemanages', JSON.stringify(bd.sitemanages));
-                    }
-                    if (bd.bankaccounts) {
-                        data.bankaccounts = bd.bankaccounts;
-                        localStorage.setItem('bankaccounts', JSON.stringify(bd.bankaccounts));
-                    }
-                    if (bd.goals) {
-                        data.goals = bd.goals;
-                        localStorage.setItem('goals', JSON.stringify(bd.goals));
-                    }
-                    if (bd.cultures) {
-                        data.cultures = bd.cultures;
-                        localStorage.setItem('cultures', JSON.stringify(bd.cultures));
-                    }
-                    if (bd.people) {
-                        data.people = bd.people;
-                        localStorage.setItem('people', JSON.stringify(bd.people));
-                    }
-                    if (bd.customCategories) {
-                        data.customCategories = bd.customCategories;
-                        localStorage.setItem('customCategories', JSON.stringify(bd.customCategories));
-                    }
-                    if (bd.customCategoryMemos) {
-                        data.customCategoryMemos = bd.customCategoryMemos;
-                        localStorage.setItem('customCategoryMemos', JSON.stringify(bd.customCategoryMemos));
                     }
                     if (bd.hiddenMenus) {
                         hiddenMenus = bd.hiddenMenus;
@@ -13100,36 +13308,65 @@
                     showToast('데이터가 성공적으로 복원되었습니다!');
                     
                 } catch (error) {
-                    alert('백업 파일을 읽는 중 오류가 발생했습니다.\n' + error.message);
+                    await showCustomDialog({
+                        iconType: 'danger',
+                        title: '오류',
+                        message: '백업 파일을 읽는 중 오류가 발생했습니다.\n\n' + error.message,
+                        confirmText: '확인',
+                        cancelText: '닫기'
+                    });
                 }
                 
                 event.target.value = '';
             };
             
-            reader.onerror = function() {
-                alert('파일을 읽는 중 오류가 발생했습니다.');
+            reader.onerror = async function() {
+                await showCustomDialog({
+                    iconType: 'danger',
+                    title: '파일 읽기 오류',
+                    message: '파일을 읽는 중 오류가 발생했습니다.\n다시 시도해주세요.',
+                    confirmText: '확인',
+                    cancelText: '닫기'
+                });
                 event.target.value = '';
             };
             
             reader.readAsText(file);
         }
         
-        // 모든 데이터 삭제
-        function deleteAllData() {
-            // 2단계 확인 절차
-            if (!confirm('정말로 모든 데이터를 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다!\n모든 메모, 일정, 메뉴가 영구적으로 삭제됩니다.')) {
-                return;
-            }
+        // ========== 모든 데이터 삭제 (커스텀 다이얼로그) ==========
+        async function deleteAllDataCustom() {
+            // 1단계: 경고 확인
+            var step1 = await showCustomDialog({
+                iconType: 'danger',
+                title: '모든 데이터 삭제',
+                message: '정말로 모든 데이터를 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다!\n모든 메모, 일정, 메뉴가 영구적으로 삭제됩니다.',
+                confirmText: '삭제 진행',
+                cancelText: '취소',
+                confirmDanger: true
+            });
             
-            // 2차 확인
-            const confirmText = prompt('삭제를 확인하려면 "삭제"를 입력하세요:');
-            if (confirmText !== '삭제') {
+            if (!step1.confirmed) return;
+            
+            // 2단계: "삭제" 입력 확인
+            var step2 = await showCustomDialog({
+                iconType: 'danger',
+                title: '최종 확인',
+                message: '삭제를 확인하려면 아래에 "삭제"를 입력하세요.',
+                showInput: true,
+                inputPlaceholder: '삭제',
+                confirmText: '영구 삭제',
+                cancelText: '취소',
+                confirmDanger: true
+            });
+            
+            if (!step2.confirmed || step2.inputValue !== '삭제') {
                 showToast('삭제가 취소되었습니다.');
                 return;
             }
             
             // localStorage의 모든 데이터 삭제
-            const keysToDelete = [
+            var keysToDelete = [
                 'memos', 'todos', 'todoHistory', 'lastTodoDate',
                 'schedules', 'travels', 'restaurants', 'hospitals',
                 'sitemanages', 'bankaccounts', 'ideas', 'goals',
@@ -13137,9 +13374,9 @@
                 'customCategories', 'customCategoryMemos', 'hiddenMenus'
             ];
             
-            keysToDelete.forEach(key => {
-                localStorage.removeItem(key);
-            });
+            for (var i = 0; i < keysToDelete.length; i++) {
+                localStorage.removeItem(keysToDelete[i]);
+            }
             
             // data 객체 초기화
             data.memos = [];
