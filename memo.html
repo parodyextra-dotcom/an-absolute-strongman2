@@ -5678,6 +5678,209 @@
             color: rgba(255, 255, 255, 0.5);
         }
 
+        /* 폼 다중 이미지 그리드 미리보기 (폼용) */
+        .form-images-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .form-image-preview-item {
+            position: relative;
+            aspect-ratio: 1;
+        }
+
+        .form-image-preview-item .form-image-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .form-image-preview-item .form-image-remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-image-preview-item .form-image-remove-btn:hover {
+            background: rgba(255, 107, 107, 0.8);
+            transform: scale(1.1);
+        }
+
+        .form-image-preview-item .form-image-index {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .form-image-count {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* 리스트 썸네일 다중 이미지 배지 */
+        .list-thumb-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .list-image-count {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 10px;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+        
+        /* 상세보기 다중 이미지 그리드 */
+        .detail-images-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+        
+        .detail-grid-image {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .detail-grid-image:hover {
+            transform: scale(1.02);
+        }
+        
+        /* 전체화면 이미지 갤러리 */
+        .fullscreen-gallery-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+        }
+        
+        .gallery-counter {
+            color: white;
+            font-size: 14px;
+        }
+        
+        .gallery-close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+        }
+        
+        .gallery-body {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 0 60px;
+        }
+        
+        .gallery-main-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .gallery-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .gallery-nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .gallery-nav-btn.prev {
+            left: 10px;
+        }
+        
+        .gallery-nav-btn.next {
+            right: 10px;
+        }
+        
+        .gallery-thumbnails {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+        
+        .gallery-thumb {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .gallery-thumb.active {
+            opacity: 1;
+            border-color: white;
+        }
+        
+        .gallery-thumb:hover {
+            opacity: 0.8;
+        }
+
         .memo-image-remove-btn {
             position: absolute;
             top: 10px;
@@ -7939,7 +8142,7 @@
                 <div class="people-form-group">
                     <label>사진</label>
                     <div class="form-image-upload-section">
-                        <input type="file" id="peopleImageInput" accept="image/*" style="display: none;" onchange="handleFormImageSelect(event, 'people', 'gallery')">
+                        <input type="file" id="peopleImageInput" accept="image/*" multiple style="display: none;" onchange="handleFormImageSelect(event, 'people', 'gallery')">
                         <input type="file" id="peopleCameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleFormImageSelect(event, 'people', 'camera')">
                         <div class="form-image-buttons">
                             <label class="form-image-upload-label gallery-btn" for="peopleImageInput">
@@ -8042,7 +8245,7 @@
                 <div class="culture-form-group">
                     <label>사진</label>
                     <div class="form-image-upload-section">
-                        <input type="file" id="cultureImageInput" accept="image/*" style="display: none;" onchange="handleFormImageSelect(event, 'culture', 'gallery')">
+                        <input type="file" id="cultureImageInput" accept="image/*" multiple style="display: none;" onchange="handleFormImageSelect(event, 'culture', 'gallery')">
                         <input type="file" id="cultureCameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleFormImageSelect(event, 'culture', 'camera')">
                         <div class="form-image-buttons">
                             <label class="form-image-upload-label gallery-btn" for="cultureImageInput">
@@ -8524,7 +8727,7 @@
                 <div class="travel-form-group">
                     <label>사진</label>
                     <div class="form-image-upload-section">
-                        <input type="file" id="travelImageInput" accept="image/*" style="display: none;" onchange="handleFormImageSelect(event, 'travel', 'gallery')">
+                        <input type="file" id="travelImageInput" accept="image/*" multiple style="display: none;" onchange="handleFormImageSelect(event, 'travel', 'gallery')">
                         <input type="file" id="travelCameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleFormImageSelect(event, 'travel', 'camera')">
                         <div class="form-image-buttons">
                             <label class="form-image-upload-label gallery-btn" for="travelImageInput">
@@ -8749,7 +8952,7 @@
                 <div class="restaurant-form-group">
                     <label>사진</label>
                     <div class="form-image-upload-section">
-                        <input type="file" id="restaurantImageInput" accept="image/*" style="display: none;" onchange="handleFormImageSelect(event, 'restaurant', 'gallery')">
+                        <input type="file" id="restaurantImageInput" accept="image/*" multiple style="display: none;" onchange="handleFormImageSelect(event, 'restaurant', 'gallery')">
                         <input type="file" id="restaurantCameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleFormImageSelect(event, 'restaurant', 'camera')">
                         <div class="form-image-buttons">
                             <label class="form-image-upload-label gallery-btn" for="restaurantImageInput">
@@ -8865,7 +9068,7 @@
                 <div class="hospital-form-group">
                     <label>사진</label>
                     <div class="form-image-upload-section">
-                        <input type="file" id="hospitalImageInput" accept="image/*" style="display: none;" onchange="handleFormImageSelect(event, 'hospital', 'gallery')">
+                        <input type="file" id="hospitalImageInput" accept="image/*" multiple style="display: none;" onchange="handleFormImageSelect(event, 'hospital', 'gallery')">
                         <input type="file" id="hospitalCameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleFormImageSelect(event, 'hospital', 'camera')">
                         <div class="form-image-buttons">
                             <label class="form-image-upload-label gallery-btn" for="hospitalImageInput">
@@ -9688,6 +9891,95 @@
                 showToast('🔗 공유되었습니다');
             }
         };
+        
+        // 현재 활성화된 폼 타입 추적 (Flutter 이미지 수신용)
+        let activeFormType = null;
+        
+        // Flutter에서 폼용 이미지 수신 (단일)
+        window.flutterReceiveFormImage = function(base64ImageData, formType, source = 'gallery') {
+            try {
+                const targetFormType = formType || activeFormType;
+                if (!targetFormType || !currentFormImages.hasOwnProperty(targetFormType)) {
+                    return JSON.stringify({ success: false, error: 'invalid_form_type' });
+                }
+                
+                let imageData = base64ImageData;
+                if (!imageData.startsWith('data:image')) {
+                    imageData = 'data:image/jpeg;base64,' + imageData;
+                }
+                
+                // 최대 이미지 개수 체크
+                if (currentFormImages[targetFormType].length >= MAX_FORM_IMAGES) {
+                    showToast(`최대 ${MAX_FORM_IMAGES}장까지만 추가할 수 있습니다.`);
+                    return JSON.stringify({ success: false, error: 'max_images_reached' });
+                }
+                
+                resizeImage(imageData, 800, 800, function(resizedImage) {
+                    currentFormImages[targetFormType].push(resizedImage);
+                    renderFormImagePreviews(targetFormType);
+                    
+                    if (source === 'camera') {
+                        showToast('📸 사진이 추가되었습니다');
+                    } else {
+                        showToast('🖼️ 이미지가 추가되었습니다');
+                    }
+                });
+                
+                return JSON.stringify({ success: true });
+            } catch (e) {
+                console.error('Flutter 폼 이미지 수신 오류:', e);
+                return JSON.stringify({ success: false, error: e.message });
+            }
+        };
+        
+        // Flutter에서 폼용 다중 이미지 수신
+        window.flutterReceiveFormImages = function(base64ImagesArray, formType, source = 'gallery') {
+            try {
+                const targetFormType = formType || activeFormType;
+                if (!targetFormType || !currentFormImages.hasOwnProperty(targetFormType)) {
+                    return JSON.stringify({ success: false, error: 'invalid_form_type' });
+                }
+                
+                const images = JSON.parse(base64ImagesArray);
+                if (!Array.isArray(images)) {
+                    return window.flutterReceiveFormImage(base64ImagesArray, targetFormType, source);
+                }
+                
+                const remainingSlots = MAX_FORM_IMAGES - currentFormImages[targetFormType].length;
+                if (remainingSlots <= 0) {
+                    showToast(`최대 ${MAX_FORM_IMAGES}장까지만 추가할 수 있습니다.`);
+                    return JSON.stringify({ success: false, error: 'max_images_reached' });
+                }
+                
+                const imagesToAdd = images.slice(0, remainingSlots);
+                if (images.length > remainingSlots) {
+                    showToast(`${remainingSlots}장만 추가됩니다. (최대 ${MAX_FORM_IMAGES}장)`);
+                }
+                
+                let processedCount = 0;
+                imagesToAdd.forEach(imgData => {
+                    let imageData = imgData;
+                    if (!imageData.startsWith('data:image')) {
+                        imageData = 'data:image/jpeg;base64,' + imageData;
+                    }
+                    
+                    resizeImage(imageData, 800, 800, function(resizedImage) {
+                        currentFormImages[targetFormType].push(resizedImage);
+                        processedCount++;
+                        
+                        if (processedCount === imagesToAdd.length) {
+                            renderFormImagePreviews(targetFormType);
+                            showToast(`🖼️ ${imagesToAdd.length}장의 이미지가 추가되었습니다`);
+                        }
+                    });
+                });
+                
+                return JSON.stringify({ success: true, added: imagesToAdd.length });
+            } catch (e) {
+                console.error('Flutter 폼 다중 이미지 수신 오류:', e);
+                return JSON.stringify({ success: false, error: e.message });
+            }
+        };
 
         // ========== 데이터 로드 함수 (하이브리드) ==========
         function safeJSONParse(str, defaultValue) {
@@ -9772,14 +10064,130 @@
         let isEditMode = false;
         let currentMemoImages = []; // 현재 선택된 이미지들 (Base64 배열)
 
-        // 각 폼별 현재 선택된 이미지 저장
+        // 각 폼별 현재 선택된 이미지 저장 (다중 이미지 배열로 변경)
+        const MAX_FORM_IMAGES = 10; // 각 폼별 최대 이미지 개수
         let currentFormImages = {
-            travel: null,
-            restaurant: null,
-            hospital: null,
-            culture: null,
-            people: null
+            travel: [],
+            restaurant: [],
+            hospital: [],
+            culture: [],
+            people: []
         };
+        
+        // 이미지 렌더링 헬퍼 함수 (다중 이미지 지원, 레거시 호환)
+        function getItemImages(item) {
+            // images 배열이 있으면 사용, 없으면 image 단일값을 배열로 변환
+            if (item.images && Array.isArray(item.images) && item.images.length > 0) {
+                return item.images;
+            } else if (item.image) {
+                return [item.image];
+            }
+            return [];
+        }
+        
+        // 리스트용 첫번째 이미지 썸네일 렌더링
+        function renderListThumbnail(item, altText = '사진') {
+            const images = getItemImages(item);
+            if (images.length === 0) return '';
+            return `<div class="list-thumb-wrapper">
+                <img src="${images[0]}" alt="${altText}" class="list-item-image">
+                ${images.length > 1 ? `<span class="list-image-count">+${images.length - 1}</span>` : ''}
+            </div>`;
+        }
+        
+        // 상세보기용 다중 이미지 갤러리 렌더링
+        function renderDetailImages(item, altText = '사진') {
+            const images = getItemImages(item);
+            if (images.length === 0) return '';
+            
+            if (images.length === 1) {
+                return `<img src="${images[0]}" alt="${altText}" class="detail-item-image" onclick="openFullscreenImage('${images[0]}')">`;
+            }
+            
+            // 다중 이미지 그리드
+            let html = '<div class="detail-images-grid">';
+            images.forEach((img, index) => {
+                html += `<img src="${img}" alt="${altText} ${index + 1}" class="detail-grid-image" onclick="openDetailImageGallery(${index}, '${btoa(JSON.stringify(images))}')">`;
+            });
+            html += '</div>';
+            return html;
+        }
+        
+        // 상세보기 이미지 갤러리 오픈
+        function openDetailImageGallery(startIndex, encodedImages) {
+            try {
+                const images = JSON.parse(atob(encodedImages));
+                openFullscreenImageGallery(images, startIndex);
+            } catch (e) {
+                console.error('이미지 갤러리 열기 오류:', e);
+            }
+        }
+        
+        // 다중 이미지 전체화면 갤러리
+        function openFullscreenImageGallery(images, startIndex = 0) {
+            let currentIndex = startIndex;
+            
+            const overlay = document.createElement('div');
+            overlay.className = 'fullscreen-gallery-overlay';
+            overlay.innerHTML = `
+                <div class="gallery-header">
+                    <span class="gallery-counter">${currentIndex + 1} / ${images.length}</span>
+                    <button class="gallery-close-btn" onclick="this.closest('.fullscreen-gallery-overlay').remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="gallery-body">
+                    ${images.length > 1 ? `<button class="gallery-nav-btn prev" onclick="navigateGallery(-1)"><i class="fas fa-chevron-left"></i></button>` : ''}
+                    <img src="${images[currentIndex]}" alt="이미지" class="gallery-main-image">
+                    ${images.length > 1 ? `<button class="gallery-nav-btn next" onclick="navigateGallery(1)"><i class="fas fa-chevron-right"></i></button>` : ''}
+                </div>
+                ${images.length > 1 ? `
+                <div class="gallery-thumbnails">
+                    ${images.map((img, i) => `<img src="${img}" alt="썸네일 ${i + 1}" class="gallery-thumb ${i === currentIndex ? 'active' : ''}" onclick="setGalleryImage(${i})">`).join('')}
+                </div>
+                ` : ''}
+            `;
+            
+            document.body.appendChild(overlay);
+            
+            window.navigateGallery = function(direction) {
+                currentIndex = (currentIndex + direction + images.length) % images.length;
+                updateGalleryImage();
+            };
+            
+            window.setGalleryImage = function(index) {
+                currentIndex = index;
+                updateGalleryImage();
+            };
+            
+            function updateGalleryImage() {
+                overlay.querySelector('.gallery-main-image').src = images[currentIndex];
+                overlay.querySelector('.gallery-counter').textContent = `${currentIndex + 1} / ${images.length}`;
+                overlay.querySelectorAll('.gallery-thumb').forEach((thumb, i) => {
+                    thumb.classList.toggle('active', i === currentIndex);
+                });
+            }
+            
+            // 스와이프 지원
+            let touchStartX = 0;
+            overlay.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+            });
+            overlay.addEventListener('touchend', (e) => {
+                const touchEndX = e.changedTouches[0].clientX;
+                const diff = touchStartX - touchEndX;
+                if (Math.abs(diff) > 50) {
+                    navigateGallery(diff > 0 ? 1 : -1);
+                }
+            });
+            
+            // 배경 클릭시 닫기
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay || e.target.classList.contains('gallery-body')) {
+                    overlay.remove();
+                }
+            });
+        }
 
         // 카테고리 관련 변수
         let selectedIcon = 'fa-star';
@@ -9912,7 +10320,7 @@
             } else {
                 container.innerHTML = data.travels.map(travel => `
                     <div class="travel-card" onclick="openTravelDetail(${travel.id})">
-                        ${travel.image ? `<img src="${travel.image}" alt="여행 사진" class="list-item-image">` : ''}
+                        ${renderListThumbnail(travel, '여행 사진')}
                         <div class="travel-card-header">
                             <div class="travel-card-title">
                                 <i class="fas fa-map-marker-alt"></i>
@@ -9939,7 +10347,7 @@
             const content = document.getElementById('travelDetailContent');
             
             content.innerHTML = `
-                ${travel.image ? `<img src="${travel.image}" alt="여행 사진" class="detail-item-image" onclick="openFullscreenImage('${travel.image}')">` : ''}
+                ${renderDetailImages(travel, '여행 사진')}
                 <h2 class="travel-detail-title">
                     <i class="fas fa-plane"></i>
                     ${travel.destination}
@@ -9997,6 +10405,7 @@
 
         // 여행 폼 열기
         function openTravelForm(travel = null) {
+            activeFormType = 'travel'; // Flutter 이미지 수신용
             const modal = document.getElementById('travelFormModal');
             const title = document.getElementById('travelFormTitle');
             const submitBtn = document.getElementById('travelSubmitBtn');
@@ -10011,8 +10420,8 @@
                 document.getElementById('newTravelBudget').value = travel.budget || '';
                 document.getElementById('newTravelStatus').value = travel.status;
                 document.getElementById('newTravelMemo').value = travel.memo || '';
-                // 이미지 로드
-                loadFormImage('travel', travel.image);
+                // 이미지 로드 (배열 또는 단일 이미지 지원)
+                loadFormImage('travel', travel.images || travel.image);
             } else {
                 // 추가 모드
                 title.textContent = '새 여행 추가';
@@ -10030,6 +10439,7 @@
         function closeTravelForm() {
             document.getElementById('travelFormModal').classList.remove('active');
             resetFormImage('travel');
+            if (activeFormType === 'travel') activeFormType = null;
         }
 
         // 여행 폼 제출
@@ -10043,7 +10453,7 @@
                 budget: document.getElementById('newTravelBudget').value,
                 status: document.getElementById('newTravelStatus').value,
                 memo: document.getElementById('newTravelMemo').value,
-                image: currentFormImages.travel
+                images: [...currentFormImages.travel]
             };
             
             if (editId) {
@@ -10123,7 +10533,7 @@
             } else {
                 container.innerHTML = data.restaurants.map(restaurant => `
                     <div class="restaurant-card" onclick="openRestaurantDetail(${restaurant.id})">
-                        ${restaurant.image ? `<img src="${restaurant.image}" alt="맛집 사진" class="list-item-image">` : ''}
+                        ${renderListThumbnail(restaurant, '맛집 사진')}
                         <div class="restaurant-card-header">
                             <div class="restaurant-card-title">
                                 <i class="fas fa-store"></i>
@@ -10150,7 +10560,7 @@
             const content = document.getElementById('restaurantDetailContent');
             
             content.innerHTML = `
-                ${restaurant.image ? `<img src="${restaurant.image}" alt="맛집 사진" class="detail-item-image" onclick="openFullscreenImage('${restaurant.image}')">` : ''}
+                ${renderDetailImages(restaurant, '맛집 사진')}
                 <h2 class="restaurant-detail-title">
                     <i class="fas fa-store"></i>
                     ${restaurant.name}
@@ -10209,6 +10619,7 @@
 
         // 맛집 폼 열기
         function openRestaurantForm(restaurant = null) {
+            activeFormType = 'restaurant'; // Flutter 이미지 수신용
             const modal = document.getElementById('restaurantFormModal');
             const title = document.getElementById('restaurantFormTitle');
             const submitBtn = document.getElementById('restaurantSubmitBtn');
@@ -10224,8 +10635,8 @@
                 document.getElementById('newRestaurantMenu').value = restaurant.menu || '';
                 document.getElementById('newRestaurantMemo').value = restaurant.memo || '';
                 selectedRestaurantRating = restaurant.rating;
-                // 이미지 로드
-                loadFormImage('restaurant', restaurant.image);
+                // 이미지 로드 (배열 또는 단일 이미지 지원)
+                loadFormImage('restaurant', restaurant.images || restaurant.image);
             } else {
                 // 추가 모드
                 title.textContent = '새 맛집 추가';
@@ -10245,6 +10656,7 @@
         function closeRestaurantForm() {
             document.getElementById('restaurantFormModal').classList.remove('active');
             resetFormImage('restaurant');
+            if (activeFormType === 'restaurant') activeFormType = null;
         }
 
         // 별점 UI 초기화
@@ -10282,7 +10694,7 @@
                 rating: selectedRestaurantRating,
                 menu: document.getElementById('newRestaurantMenu').value,
                 memo: document.getElementById('newRestaurantMemo').value,
-                image: currentFormImages.restaurant
+                images: [...currentFormImages.restaurant]
             };
             
             if (editId) {
@@ -10378,7 +10790,7 @@
             } else {
                 container.innerHTML = data.cultures.map(culture => `
                     <div class="culture-card" onclick="openCultureDetail(${culture.id})">
-                        ${culture.image ? `<img src="${culture.image}" alt="문화 사진" class="list-item-image">` : ''}
+                        ${renderListThumbnail(culture, '문화 사진')}
                         <div class="culture-card-header">
                             <div class="culture-card-title">
                                 <i class="fas ${getCultureIcon(culture.genre)}"></i>
@@ -10404,7 +10816,7 @@
             const content = document.getElementById('cultureDetailContent');
             
             content.innerHTML = `
-                ${culture.image ? `<img src="${culture.image}" alt="문화 사진" class="detail-item-image" onclick="openFullscreenImage('${culture.image}')">` : ''}
+                ${renderDetailImages(culture, '문화 사진')}
                 <h2 class="culture-detail-title">
                     <i class="fas ${getCultureIcon(culture.genre)}"></i>
                     ${escapeHtml(culture.target)}
@@ -10452,6 +10864,7 @@
 
         // 문화 폼 열기
         function openCultureForm(culture = null) {
+            activeFormType = 'culture'; // Flutter 이미지 수신용
             const modal = document.getElementById('cultureFormModal');
             const title = document.getElementById('cultureFormTitle');
             const submitBtn = document.getElementById('cultureSubmitBtn');
@@ -10464,8 +10877,8 @@
                 document.getElementById('newCultureGenre').value = culture.genre;
                 document.getElementById('newCultureTarget').value = culture.target;
                 document.getElementById('newCultureContent').value = culture.content || '';
-                // 이미지 로드
-                loadFormImage('culture', culture.image);
+                // 이미지 로드 (배열 또는 단일 이미지 지원)
+                loadFormImage('culture', culture.images || culture.image);
             } else {
                 // 추가 모드
                 title.textContent = '새 문화 기록 추가';
@@ -10483,6 +10896,7 @@
         function closeCultureForm() {
             document.getElementById('cultureFormModal').classList.remove('active');
             resetFormImage('culture');
+            if (activeFormType === 'culture') activeFormType = null;
         }
 
         // 문화 폼 제출
@@ -10494,7 +10908,7 @@
                 genre: document.getElementById('newCultureGenre').value,
                 target: document.getElementById('newCultureTarget').value,
                 content: document.getElementById('newCultureContent').value,
-                image: currentFormImages.culture
+                images: [...currentFormImages.culture]
             };
             
             if (!data.cultures) data.cultures = [];
@@ -10611,7 +11025,7 @@
             } else {
                 container.innerHTML = data.people.map(person => `
                     <div class="people-card" onclick="openPeopleDetail(${person.id})">
-                        ${person.image ? `<img src="${person.image}" alt="인물 사진" class="list-item-image">` : ''}
+                        ${renderListThumbnail(person, '인물 사진')}
                         <div class="people-card-header">
                             <div class="people-card-title">
                                 <i class="fas ${getPeopleIcon(person.relation)}"></i>
@@ -10641,7 +11055,7 @@
             const content = document.getElementById('peopleDetailContent');
             
             content.innerHTML = `
-                ${person.image ? `<img src="${person.image}" alt="인물 사진" class="detail-item-image" onclick="openFullscreenImage('${person.image}')">` : ''}
+                ${renderDetailImages(person, '인물 사진')}
                 <h2 class="people-detail-title">
                     <i class="fas ${getPeopleIcon(person.relation)}"></i>
                     ${escapeHtml(person.name)}
@@ -10720,6 +11134,7 @@
 
         // 사람 폼 열기
         function openPeopleForm(person = null) {
+            activeFormType = 'people'; // Flutter 이미지 수신용
             const modal = document.getElementById('peopleFormModal');
             const title = document.getElementById('peopleFormTitle');
             const submitBtn = document.getElementById('peopleSubmitBtn');
@@ -10735,8 +11150,8 @@
                 document.getElementById('newPeopleEmail').value = person.email || '';
                 document.getElementById('newPeopleNote').value = person.note || '';
                 selectPeopleImportance(person.importance || '중간');
-                // 이미지 로드
-                loadFormImage('people', person.image);
+                // 이미지 로드 (배열 또는 단일 이미지 지원)
+                loadFormImage('people', person.images || person.image);
             } else {
                 // 추가 모드
                 title.textContent = '새 인물 추가';
@@ -10755,6 +11170,7 @@
         function closePeopleForm() {
             document.getElementById('peopleFormModal').classList.remove('active');
             resetFormImage('people');
+            if (activeFormType === 'people') activeFormType = null;
         }
 
         // 사람 폼 제출
@@ -10769,7 +11185,7 @@
                 email: document.getElementById('newPeopleEmail').value,
                 importance: selectedPeopleImportance,
                 note: document.getElementById('newPeopleNote').value,
-                image: currentFormImages.people
+                images: [...currentFormImages.people]
             };
             
             if (!data.people) data.people = [];
@@ -11078,7 +11494,7 @@
             } else {
                 container.innerHTML = data.hospitals.map(hospital => `
                     <div class="hospital-card" onclick="openHospitalDetail(${hospital.id})">
-                        ${hospital.image ? `<img src="${hospital.image}" alt="병원 사진" class="list-item-image">` : ''}
+                        ${renderListThumbnail(hospital, '병원 사진')}
                         <div class="hospital-card-header">
                             <div class="hospital-card-title">
                                 <i class="fas fa-hospital"></i>
@@ -11105,7 +11521,7 @@
             const content = document.getElementById('hospitalDetailContent');
             
             content.innerHTML = `
-                ${hospital.image ? `<img src="${hospital.image}" alt="병원 사진" class="detail-item-image" onclick="openFullscreenImage('${hospital.image}')">` : ''}
+                ${renderDetailImages(hospital, '병원 사진')}
                 <h2 class="hospital-detail-title">
                     <i class="fas fa-hospital"></i>
                     ${escapeHtml(hospital.name)}
@@ -11172,6 +11588,7 @@
 
         // 병원 폼 열기
         function openHospitalForm(hospital = null) {
+            activeFormType = 'hospital'; // Flutter 이미지 수신용
             const modal = document.getElementById('hospitalFormModal');
             const title = document.getElementById('hospitalFormTitle');
             const submitBtn = document.getElementById('hospitalSubmitBtn');
@@ -11188,8 +11605,8 @@
                 document.getElementById('newHospitalNextDate').value = hospital.nextDate || '';
                 document.getElementById('newHospitalSymptoms').value = hospital.symptoms || '';
                 document.getElementById('newHospitalDoctorNote').value = hospital.doctorNote || '';
-                // 이미지 로드
-                loadFormImage('hospital', hospital.image);
+                // 이미지 로드 (배열 또는 단일 이미지 지원)
+                loadFormImage('hospital', hospital.images || hospital.image);
             } else {
                 // 추가 모드
                 title.textContent = '새 병원 기록 추가';
@@ -11207,6 +11624,7 @@
         function closeHospitalForm() {
             document.getElementById('hospitalFormModal').classList.remove('active');
             resetFormImage('hospital');
+            if (activeFormType === 'hospital') activeFormType = null;
         }
 
         // 병원 폼 제출
@@ -11222,7 +11640,7 @@
                 nextDate: document.getElementById('newHospitalNextDate').value,
                 symptoms: document.getElementById('newHospitalSymptoms').value,
                 doctorNote: document.getElementById('newHospitalDoctorNote').value,
-                image: currentFormImages.hospital
+                images: [...currentFormImages.hospital]
             };
             
             if (!data.hospitals) data.hospitals = [];
@@ -11791,14 +12209,36 @@
             document.getElementById(formType + 'CameraInput').click();
         }
 
-        // 폼 이미지 선택 핸들러
+        // 폼 이미지 선택 핸들러 (다중 이미지 지원)
         function handleFormImageSelect(event, formType, source = 'gallery') {
-            const file = event.target.files[0];
-            if (file) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+            
+            // 현재 이미지 개수 확인
+            const currentCount = currentFormImages[formType].length;
+            const remainingSlots = MAX_FORM_IMAGES - currentCount;
+            
+            if (remainingSlots <= 0) {
+                showToast(`최대 ${MAX_FORM_IMAGES}장까지만 추가할 수 있습니다.`);
+                event.target.value = '';
+                return;
+            }
+            
+            // 추가할 파일 수 제한
+            const filesToProcess = Array.from(files).slice(0, remainingSlots);
+            if (files.length > remainingSlots) {
+                showToast(`${remainingSlots}장만 추가됩니다. (최대 ${MAX_FORM_IMAGES}장)`);
+            }
+            
+            let processedCount = 0;
+            filesToProcess.forEach(file => {
                 // 파일 크기 체크 (5MB 제한)
                 if (file.size > 5 * 1024 * 1024) {
                     showToast('이미지 크기는 5MB 이하로 선택해주세요.');
-                    event.target.value = '';
+                    processedCount++;
+                    if (processedCount === filesToProcess.length) {
+                        renderFormImagePreviews(formType);
+                    }
                     return;
                 }
 
@@ -11806,50 +12246,106 @@
                 reader.onload = function(e) {
                     // 이미지 리사이징
                     resizeImage(e.target.result, 800, 800, function(resizedImage) {
-                        currentFormImages[formType] = resizedImage;
-                        document.getElementById(formType + 'ImagePreview').src = resizedImage;
-                        document.getElementById(formType + 'ImagePreviewContainer').classList.add('active');
+                        currentFormImages[formType].push(resizedImage);
+                        processedCount++;
                         
-                        // 카메라로 찍은 사진이면 앨범에 저장
-                        if (source === 'camera') {
-                            saveImageToAlbum(resizedImage);
+                        // 모든 이미지 처리 완료 후 미리보기 렌더링
+                        if (processedCount === filesToProcess.length) {
+                            renderFormImagePreviews(formType);
+                            
+                            // 카메라로 찍은 사진이면 앨범에 저장
+                            if (source === 'camera') {
+                                saveImageToAlbum(resizedImage);
+                            }
                         }
                     });
                 };
                 reader.readAsDataURL(file);
+            });
+            
+            event.target.value = '';
+        }
+        
+        // 폼 이미지 미리보기 렌더링 (다중 이미지 지원)
+        function renderFormImagePreviews(formType) {
+            const container = document.getElementById(formType + 'ImagePreviewContainer');
+            if (!container) return;
+            
+            if (currentFormImages[formType].length === 0) {
+                container.classList.remove('active');
+                container.innerHTML = `
+                    <img src="" alt="미리보기" class="form-image-preview" id="${formType}ImagePreview">
+                    <button type="button" class="form-image-remove-btn" onclick="removeFormImage('${formType}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                return;
             }
+            
+            container.classList.add('active');
+            let html = '<div class="form-images-grid">';
+            currentFormImages[formType].forEach((img, index) => {
+                html += `
+                    <div class="form-image-preview-item">
+                        <img src="${img}" alt="미리보기 ${index + 1}" class="form-image-preview">
+                        <button type="button" class="form-image-remove-btn" onclick="removeFormImageAt('${formType}', ${index})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <span class="form-image-index">${index + 1}</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            html += `<div class="form-image-count">${currentFormImages[formType].length}/${MAX_FORM_IMAGES}장</div>`;
+            container.innerHTML = html;
+        }
+        
+        // 개별 이미지 삭제
+        function removeFormImageAt(formType, index) {
+            currentFormImages[formType].splice(index, 1);
+            renderFormImagePreviews(formType);
         }
 
-        // 폼 이미지 제거
+        // 폼 이미지 전체 제거 (다중 이미지 지원)
         function removeFormImage(formType) {
-            currentFormImages[formType] = null;
-            document.getElementById(formType + 'ImagePreview').src = '';
-            document.getElementById(formType + 'ImagePreviewContainer').classList.remove('active');
+            currentFormImages[formType] = [];
+            renderFormImagePreviews(formType);
             document.getElementById(formType + 'ImageInput').value = '';
             const cameraInput = document.getElementById(formType + 'CameraInput');
             if (cameraInput) cameraInput.value = '';
         }
 
-        // 폼 이미지 초기화 (폼 열기/닫기 시 사용)
+        // 폼 이미지 초기화 (폼 열기/닫기 시 사용) (다중 이미지 지원)
         function resetFormImage(formType) {
-            currentFormImages[formType] = null;
+            currentFormImages[formType] = [];
             const previewContainer = document.getElementById(formType + 'ImagePreviewContainer');
-            const preview = document.getElementById(formType + 'ImagePreview');
             const input = document.getElementById(formType + 'ImageInput');
             const cameraInput = document.getElementById(formType + 'CameraInput');
             
-            if (previewContainer) previewContainer.classList.remove('active');
-            if (preview) preview.src = '';
+            if (previewContainer) {
+                previewContainer.classList.remove('active');
+                previewContainer.innerHTML = `
+                    <img src="" alt="미리보기" class="form-image-preview" id="${formType}ImagePreview">
+                    <button type="button" class="form-image-remove-btn" onclick="removeFormImage('${formType}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+            }
             if (input) input.value = '';
             if (cameraInput) cameraInput.value = '';
         }
 
-        // 기존 이미지 로드 (수정 모드)
+        // 기존 이미지 로드 (수정 모드) (다중 이미지 지원)
         function loadFormImage(formType, imageData) {
+            // imageData가 배열인지 단일 이미지인지 확인
             if (imageData) {
-                currentFormImages[formType] = imageData;
-                document.getElementById(formType + 'ImagePreview').src = imageData;
-                document.getElementById(formType + 'ImagePreviewContainer').classList.add('active');
+                if (Array.isArray(imageData)) {
+                    currentFormImages[formType] = [...imageData];
+                } else {
+                    // 단일 이미지 (레거시 지원)
+                    currentFormImages[formType] = [imageData];
+                }
+                renderFormImagePreviews(formType);
             } else {
                 resetFormImage(formType);
             }
