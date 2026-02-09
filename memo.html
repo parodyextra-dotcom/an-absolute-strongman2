@@ -5245,6 +5245,47 @@
             gap: 6px;
         }
 
+        /* 썸네일 있는 리스트 아이템 */
+        .memo-list-item.has-thumbnail {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            padding: 14px 16px;
+        }
+
+        .memo-thumbnail {
+            width: 80px;
+            height: 80px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .memo-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .memo-list-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .memo-list-item.has-thumbnail h4 {
+            margin-bottom: 6px;
+        }
+
+        .memo-list-item.has-thumbnail .memo-preview {
+            font-size: 13px;
+            -webkit-line-clamp: 2;
+        }
+
+        .memo-list-item.has-thumbnail .memo-time {
+            margin-top: 8px;
+        }
+
         /* 플로팅 추가 버튼 */
         .memo-fab {
             position: fixed;
@@ -6572,6 +6613,129 @@
             color: rgba(255, 255, 255, 0.4);
         }
 
+        /* 커스텀 폼 이미지 업로드 스타일 */
+        .custom-form-image-section {
+            margin-top: 8px;
+        }
+
+        .custom-image-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .custom-image-upload-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 255, 255, 0.25);
+            border-radius: 14px;
+            padding: 18px 12px;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .custom-image-upload-label.gallery-btn:hover {
+            border-color: rgba(74, 222, 128, 0.6);
+            background: rgba(74, 222, 128, 0.1);
+            color: #4ade80;
+        }
+
+        .custom-image-upload-label.camera-btn:hover {
+            border-color: rgba(102, 126, 234, 0.6);
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        /* Flutter WebView에서 카메라 버튼 숨김 */
+        body.flutter-webview .custom-image-upload-label.camera-btn {
+            display: none;
+        }
+
+        body.flutter-webview .custom-image-buttons {
+            gap: 0;
+        }
+
+        body.flutter-webview .custom-image-upload-label.gallery-btn {
+            flex: 1;
+            max-width: 100%;
+        }
+
+        .custom-image-upload-label i {
+            font-size: 24px;
+        }
+
+        .custom-image-upload-label span {
+            font-size: 14px;
+        }
+
+        .custom-image-preview-container {
+            margin-top: 12px;
+            display: none;
+            position: relative;
+        }
+
+        .custom-image-preview-container.active {
+            display: block;
+        }
+
+        .custom-image-preview {
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .custom-image-remove-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 36px;
+            height: 36px;
+            background: rgba(0, 0, 0, 0.6);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .custom-image-remove-btn:hover {
+            background: rgba(255, 107, 107, 0.8);
+            transform: scale(1.1);
+        }
+
+        /* 메모 상세보기 이미지 스타일 */
+        .memo-image-field {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .field-image-container {
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .memo-detail-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .memo-detail-image:hover {
+            transform: scale(1.02);
+        }
+
         /* 테마 색상 클래스 - 각 색상별 밝은 배경과 어두운 배경 변형 포함 */
         .theme-color-1 { 
             --theme-color: #667eea; --theme-color2: #764ba2;
@@ -6758,31 +6922,64 @@
             box-shadow: 0 0 0 3px var(--theme-header-shadow, rgba(102, 126, 234, 0.15));
         }
 
-        /* 메모 상세보기 필드 아이템 스타일 */
+        /* 메모 상세보기 필드 아이템 스타일 - 개선된 UI */
         .memo-field-item {
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            padding: 14px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            gap: 8px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s;
+        }
+
+        .memo-field-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.12);
         }
 
         .memo-field-item:last-child {
-            border-bottom: none;
+            margin-bottom: 0;
         }
 
         .memo-field-item .field-label {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 13px;
-            font-weight: 500;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .memo-field-item .field-label::before {
+            content: '';
+            width: 3px;
+            height: 12px;
+            background: var(--theme-color, linear-gradient(180deg, #667eea 0%, #764ba2 100%));
+            border-radius: 2px;
         }
 
         .memo-field-item .field-value {
             color: #fff;
             font-size: 16px;
-            line-height: 1.5;
+            line-height: 1.6;
             white-space: pre-wrap;
             word-break: break-word;
+            padding-left: 9px;
+        }
+
+        /* 이미지 필드 특별 스타일 */
+        .memo-field-item.memo-image-field {
+            padding: 16px 18px 18px;
+        }
+
+        .memo-field-item.memo-image-field .field-image-container {
+            margin-top: 4px;
+            padding-left: 0;
         }
 
         /* 스크롤바 스타일 */
@@ -7962,6 +8159,52 @@
                             </div>
                             <div class="field-detail-settings" id="field5Details" style="display: none;">
                                 <input type="text" id="field5Name" class="field-name-input" placeholder="항목 이름 (예: 메모, 비고)" value="특이사항" maxlength="20">
+                            </div>
+                        </div>
+
+                        <!-- 항목6: 카테고리 선택 (추가) -->
+                        <div class="field-setting-item">
+                            <div class="field-setting-header">
+                                <div class="field-checkbox-wrapper">
+                                    <input type="checkbox" id="field6Enabled" onchange="toggleFieldSetting(6)">
+                                    <span class="field-optional-badge">선택</span>
+                                </div>
+                                <span class="field-type-label">카테고리 선택 (추가)</span>
+                            </div>
+                            <div class="field-detail-settings" id="field6Details" style="display: none;">
+                                <input type="text" id="field6Name" class="field-name-input" placeholder="항목 이름 (예: 분류2, 타입)" value="분류" maxlength="20">
+                                <div class="field-sub-options">
+                                    <label class="sub-options-label"><i class="fas fa-tags"></i> 선택 옵션 (쉼표로 구분)</label>
+                                    <input type="text" id="field6Options" class="field-options-input" placeholder="옵션1, 옵션2, 옵션3, 옵션4, 옵션5">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 항목7: 이름 또는 제목 (추가2) -->
+                        <div class="field-setting-item">
+                            <div class="field-setting-header">
+                                <div class="field-checkbox-wrapper">
+                                    <input type="checkbox" id="field7Enabled" onchange="toggleFieldSetting(7)">
+                                    <span class="field-optional-badge">선택</span>
+                                </div>
+                                <span class="field-type-label">이름 또는 제목 (추가2)</span>
+                            </div>
+                            <div class="field-detail-settings" id="field7Details" style="display: none;">
+                                <input type="text" id="field7Name" class="field-name-input" placeholder="항목 이름 (예: 설명, 참고)" value="추가정보" maxlength="20">
+                            </div>
+                        </div>
+
+                        <!-- 항목8: 갤러리 (사진) -->
+                        <div class="field-setting-item">
+                            <div class="field-setting-header">
+                                <div class="field-checkbox-wrapper">
+                                    <input type="checkbox" id="field8Enabled" onchange="toggleFieldSetting(8)">
+                                    <span class="field-optional-badge">선택</span>
+                                </div>
+                                <span class="field-type-label">갤러리 (사진)</span>
+                            </div>
+                            <div class="field-detail-settings" id="field8Details" style="display: none;">
+                                <input type="text" id="field8Name" class="field-name-input" placeholder="항목 이름 (예: 사진, 이미지)" value="사진" maxlength="20">
                             </div>
                         </div>
                     </div>
@@ -12587,6 +12830,39 @@
                 });
             }
             
+            // 항목6: 카테고리 선택 (추가)
+            if (document.getElementById('field6Enabled').checked) {
+                const optionsStr = document.getElementById('field6Options').value.trim();
+                const options = optionsStr ? optionsStr.split(',').map(o => o.trim()).filter(o => o) : [];
+                fields.push({
+                    id: 6,
+                    enabled: true,
+                    type: 'select',
+                    name: document.getElementById('field6Name').value.trim() || '분류',
+                    options: options.length > 0 ? options : ['옵션1', '옵션2', '옵션3']
+                });
+            }
+            
+            // 항목7: 이름/제목 (추가2)
+            if (document.getElementById('field7Enabled').checked) {
+                fields.push({
+                    id: 7,
+                    enabled: true,
+                    type: 'text',
+                    name: document.getElementById('field7Name').value.trim() || '추가정보'
+                });
+            }
+            
+            // 항목8: 갤러리 (사진)
+            if (document.getElementById('field8Enabled').checked) {
+                fields.push({
+                    id: 8,
+                    enabled: true,
+                    type: 'image',
+                    name: document.getElementById('field8Name').value.trim() || '사진'
+                });
+            }
+            
             return fields;
         }
 
@@ -12606,9 +12882,16 @@
             document.getElementById('field3Name').value = '날짜';
             document.getElementById('field4Name').value = '부제목';
             document.getElementById('field5Name').value = '특이사항';
+            document.getElementById('field6Enabled').checked = false;
+            document.getElementById('field6Name').value = '분류';
+            document.getElementById('field6Options').value = '';
+            document.getElementById('field7Enabled').checked = false;
+            document.getElementById('field7Name').value = '추가정보';
+            document.getElementById('field8Enabled').checked = false;
+            document.getElementById('field8Name').value = '사진';
             
             // 상세설정 숨기기
-            for (let i = 2; i <= 5; i++) {
+            for (let i = 2; i <= 8; i++) {
                 const details = document.getElementById(`field${i}Details`);
                 if (details) details.style.display = 'none';
             }
@@ -12772,12 +13055,20 @@
                 `;
 
                 memoList.forEach(memo => {
-                    // 필드 기반 미리보기 생성
+                    // 필드 기반 미리보기 생성 (이미지 필드는 제외)
                     let previewItems = [];
+                    let thumbnailImage = null;
                     if (category && category.fields) {
                         category.fields.forEach(field => {
                             if (field.id > 1 && memo[`field${field.id}`]) {
-                                previewItems.push(`${field.name}: ${memo[`field${field.id}`]}`);
+                                if (field.type === 'image') {
+                                    // 첫 번째 이미지를 썸네일로 사용
+                                    if (!thumbnailImage) {
+                                        thumbnailImage = memo[`field${field.id}`];
+                                    }
+                                } else {
+                                    previewItems.push(`${field.name}: ${memo[`field${field.id}`]}`);
+                                }
                             }
                         });
                     }
@@ -12788,10 +13079,13 @@
                     const displayTitle = memo.field1 || memo.title || '(제목 없음)';
                     
                     html += `
-                        <div class="memo-list-item" onclick="showCustomMemoDetail(${memo.id})">
-                            <h4>${escapeHtml(displayTitle)}</h4>
-                            ${preview ? `<div class="memo-preview">${escapeHtml(preview)}</div>` : ''}
-                            ${time ? `<div class="memo-time"><i class="fas fa-clock"></i> ${time}</div>` : ''}
+                        <div class="memo-list-item ${thumbnailImage ? 'has-thumbnail' : ''}" onclick="showCustomMemoDetail(${memo.id})">
+                            ${thumbnailImage ? `<div class="memo-thumbnail"><img src="${thumbnailImage}" alt="썸네일"></div>` : ''}
+                            <div class="memo-list-content">
+                                <h4>${escapeHtml(displayTitle)}</h4>
+                                ${preview ? `<div class="memo-preview">${escapeHtml(preview)}</div>` : ''}
+                                ${time ? `<div class="memo-time"><i class="fas fa-clock"></i> ${time}</div>` : ''}
+                            </div>
                         </div>
                     `;
                 });
@@ -12850,6 +13144,31 @@
                         break;
                     case 'textarea':
                         formHtml += `<textarea id="customField${field.id}" class="custom-form-textarea" placeholder="${escapeHtml(field.name)}을(를) 입력하세요" ${requiredAttr}>${escapeHtml(value)}</textarea>`;
+                        break;
+                    case 'image':
+                        formHtml += `
+                            <div class="custom-form-image-section" id="customImageSection${field.id}">
+                                <input type="file" id="customImageInput${field.id}" accept="image/*" style="display: none;" onchange="handleCustomImageSelect(event, ${field.id})">
+                                <input type="file" id="customCameraInput${field.id}" accept="image/*" capture="environment" style="display: none;" onchange="handleCustomImageSelect(event, ${field.id})">
+                                <div class="custom-image-buttons">
+                                    <label class="custom-image-upload-label gallery-btn" for="customImageInput${field.id}">
+                                        <i class="fas fa-image"></i>
+                                        <span>갤러리</span>
+                                    </label>
+                                    <label class="custom-image-upload-label camera-btn" for="customCameraInput${field.id}">
+                                        <i class="fas fa-camera"></i>
+                                        <span>카메라</span>
+                                    </label>
+                                </div>
+                                <div class="custom-image-preview-container ${value ? 'active' : ''}" id="customImagePreviewContainer${field.id}">
+                                    <img src="${value || ''}" alt="미리보기" class="custom-image-preview" id="customImagePreview${field.id}">
+                                    <button type="button" class="custom-image-remove-btn" onclick="removeCustomImage(${field.id})">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <input type="hidden" id="customField${field.id}" value="${escapeHtml(value)}">
+                            </div>
+                        `;
                         break;
                     default: // text
                         formHtml += `<input type="text" id="customField${field.id}" class="custom-form-input" placeholder="${escapeHtml(field.name)}을(를) 입력하세요" value="${escapeHtml(value)}" ${requiredAttr}>`;
@@ -12940,6 +13259,40 @@
             renderCustomCategoryMemoList();
         }
 
+        // 커스텀 이미지 선택 핸들러
+        function handleCustomImageSelect(event, fieldId) {
+            const file = event.target.files[0];
+            if (file) {
+                // 파일 크기 체크 (5MB 제한)
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('이미지 크기는 5MB 이하로 선택해주세요.');
+                    event.target.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // 이미지 리사이징
+                    resizeImage(e.target.result, 800, 800, function(resizedImage) {
+                        document.getElementById(`customField${fieldId}`).value = resizedImage;
+                        document.getElementById(`customImagePreview${fieldId}`).src = resizedImage;
+                        document.getElementById(`customImagePreviewContainer${fieldId}`).classList.add('active');
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // 커스텀 이미지 제거
+        function removeCustomImage(fieldId) {
+            document.getElementById(`customField${fieldId}`).value = '';
+            document.getElementById(`customImagePreview${fieldId}`).src = '';
+            document.getElementById(`customImagePreviewContainer${fieldId}`).classList.remove('active');
+            document.getElementById(`customImageInput${fieldId}`).value = '';
+            const cameraInput = document.getElementById(`customCameraInput${fieldId}`);
+            if (cameraInput) cameraInput.value = '';
+        }
+
         // 커스텀 메모 상세보기
         function showCustomMemoDetail(memoId) {
             const category = data.customCategories.find(c => c.id === currentCustomCategoryId);
@@ -12959,10 +13312,17 @@
                 if (!field.enabled) return;
                 const value = memo[`field${field.id}`] || '';
                 if (value) {
-                    detailHtml += `<div class="memo-field-item">`;
-                    detailHtml += `<span class="field-label">${escapeHtml(field.name)}</span>`;
-                    detailHtml += `<span class="field-value">${escapeHtml(value)}</span>`;
-                    detailHtml += `</div>`;
+                    if (field.type === 'image') {
+                        detailHtml += `<div class="memo-field-item memo-image-field">`;
+                        detailHtml += `<span class="field-label">${escapeHtml(field.name)}</span>`;
+                        detailHtml += `<div class="field-image-container"><img src="${value}" alt="${escapeHtml(field.name)}" class="memo-detail-image" onclick="openImageFullscreen('${value}')"></div>`;
+                        detailHtml += `</div>`;
+                    } else {
+                        detailHtml += `<div class="memo-field-item">`;
+                        detailHtml += `<span class="field-label">${escapeHtml(field.name)}</span>`;
+                        detailHtml += `<span class="field-value">${escapeHtml(value)}</span>`;
+                        detailHtml += `</div>`;
+                    }
                 }
             });
             
