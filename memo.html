@@ -5631,12 +5631,51 @@
             display: block;
         }
 
-        .memo-image-preview {
+        /* 다중 이미지 그리드 미리보기 */
+        .memo-images-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .memo-image-preview-item {
+            position: relative;
+            aspect-ratio: 1;
+        }
+
+        .memo-image-preview-item .memo-image-preview {
             width: 100%;
-            max-height: 200px;
+            height: 100%;
             object-fit: cover;
-            border-radius: 14px;
+            border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .memo-image-preview-item .memo-image-remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+        }
+
+        .memo-image-preview-item .memo-image-index {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .memo-image-count {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
         }
 
         .memo-image-remove-btn {
@@ -5660,12 +5699,32 @@
         }
 
         /* 메모 리스트 아이템의 이미지 썸네일 */
+        .memo-thumbnail-wrapper {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
         .memo-list-item-image {
             width: 100%;
             height: 120px;
             object-fit: cover;
             border-radius: 10px;
-            margin-bottom: 12px;
+        }
+
+        .image-count-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .image-count-badge::before {
+            content: '+';
         }
 
         /* 메모 상세보기 이미지 */
@@ -5681,6 +5740,70 @@
 
         .memo-detail-image:hover {
             transform: scale(1.02);
+        }
+
+        /* 다중 이미지 슬라이더 (상세보기) */
+        .memo-detail-images-container {
+            margin-bottom: 20px;
+        }
+
+        .memo-detail-images-slider {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            border-radius: 14px;
+        }
+
+        .memo-detail-images-slider::-webkit-scrollbar {
+            display: none;
+        }
+
+        .memo-detail-slider-image {
+            flex: 0 0 100%;
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            scroll-snap-align: start;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .memo-detail-slider-image:hover {
+            transform: scale(1.02);
+        }
+
+        .memo-detail-images-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .slider-nav-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slider-nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .slider-counter {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
         }
 
         /* 이미지 전체화면 보기 */
@@ -8909,7 +9032,7 @@
             <input type="text" class="form-input" id="memoFormTitleInput" placeholder="제목을 입력하세요">
             <textarea class="form-textarea" id="memoFormContentInput" placeholder="내용을 입력하세요..."></textarea>
             <div class="memo-image-upload-section">
-                <input type="file" id="memoImageInput" accept="image/*" style="display: none;" onchange="handleMemoImageSelect(event, 'gallery')">
+                <input type="file" id="memoImageInput" accept="image/*" multiple style="display: none;" onchange="handleMemoImageSelect(event, 'gallery')">
                 <input type="file" id="memoCameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleMemoImageSelect(event, 'camera')">
                 <div class="memo-image-buttons">
                     <label class="memo-image-upload-label gallery-btn" for="memoImageInput">
@@ -8922,10 +9045,7 @@
                     </label>
                 </div>
                 <div class="memo-image-preview-container" id="memoImagePreviewContainer">
-                    <img src="" alt="미리보기" class="memo-image-preview" id="memoImagePreview">
-                    <button type="button" class="memo-image-remove-btn" onclick="removeMemoImage()">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <!-- 다중 이미지 미리보기가 JavaScript로 동적 렌더링됨 -->
                 </div>
             </div>
         </div>
@@ -9479,7 +9599,7 @@
             return false;
         }
 
-        // Flutter에서 카메라/갤러리 이미지 수신 (콜백 함수)
+        // Flutter에서 카메라/갤러리 이미지 수신 (콜백 함수) - 다중 이미지 지원
         window.flutterReceiveImage = function(base64ImageData, source) {
             try {
                 // data:image 형식인지 확인, 아니면 추가
@@ -9488,11 +9608,16 @@
                     imageData = 'data:image/jpeg;base64,' + imageData;
                 }
                 
+                // 최대 이미지 개수 체크
+                if (currentMemoImages.length >= MAX_MEMO_IMAGES) {
+                    showToast(`최대 ${MAX_MEMO_IMAGES}장까지만 추가할 수 있습니다.`);
+                    return JSON.stringify({ success: false, error: 'max_images_reached' });
+                }
+                
                 // 이미지 리사이징 후 저장
                 resizeImage(imageData, 800, 800, function(resizedImage) {
-                    currentMemoImage = resizedImage;
-                    document.getElementById('memoImagePreview').src = resizedImage;
-                    document.getElementById('memoImagePreviewContainer').classList.add('active');
+                    currentMemoImages.push(resizedImage);
+                    renderMemoImagePreviews();
                     
                     // 카메라로 찍은 사진이면 앨범에 저장 안내
                     if (source === 'camera') {
@@ -9506,6 +9631,50 @@
             } catch (e) {
                 console.error('Flutter 이미지 수신 오류:', e);
                 showToast('이미지 처리 중 오류가 발생했습니다');
+                return JSON.stringify({ success: false, error: e.message });
+            }
+        };
+        
+        // Flutter에서 다중 이미지 수신 (배열로 받기)
+        window.flutterReceiveImages = function(base64ImagesArray, source) {
+            try {
+                const images = JSON.parse(base64ImagesArray);
+                if (!Array.isArray(images)) {
+                    return window.flutterReceiveImage(base64ImagesArray, source);
+                }
+                
+                const remainingSlots = MAX_MEMO_IMAGES - currentMemoImages.length;
+                if (remainingSlots <= 0) {
+                    showToast(`최대 ${MAX_MEMO_IMAGES}장까지만 추가할 수 있습니다.`);
+                    return JSON.stringify({ success: false, error: 'max_images_reached' });
+                }
+                
+                const imagesToAdd = images.slice(0, remainingSlots);
+                if (images.length > remainingSlots) {
+                    showToast(`${remainingSlots}장만 추가됩니다. (최대 ${MAX_MEMO_IMAGES}장)`);
+                }
+                
+                let processedCount = 0;
+                imagesToAdd.forEach(imgData => {
+                    let imageData = imgData;
+                    if (!imageData.startsWith('data:image')) {
+                        imageData = 'data:image/jpeg;base64,' + imageData;
+                    }
+                    
+                    resizeImage(imageData, 800, 800, function(resizedImage) {
+                        currentMemoImages.push(resizedImage);
+                        processedCount++;
+                        
+                        if (processedCount === imagesToAdd.length) {
+                            renderMemoImagePreviews();
+                            showToast(`🖼️ ${imagesToAdd.length}장의 이미지가 추가되었습니다`);
+                        }
+                    });
+                });
+                
+                return JSON.stringify({ success: true, added: imagesToAdd.length });
+            } catch (e) {
+                console.error('Flutter 다중 이미지 수신 오류:', e);
                 return JSON.stringify({ success: false, error: e.message });
             }
         };
@@ -9601,7 +9770,7 @@
         // 현재 보고 있는 메모 ID
         let currentMemoId = null;
         let isEditMode = false;
-        let currentMemoImage = null; // 현재 선택된 이미지 (Base64)
+        let currentMemoImages = []; // 현재 선택된 이미지들 (Base64 배열)
 
         // 각 폼별 현재 선택된 이미지 저장
         let currentFormImages = {
@@ -11374,15 +11543,16 @@
                 titleInput.value = memo.title;
                 contentInput.value = memo.content || '';
                 
-                // 기존 이미지가 있으면 표시
-                if (memo.image) {
-                    currentMemoImage = memo.image;
-                    imagePreview.src = memo.image;
-                    imagePreviewContainer.classList.add('active');
+                // 기존 이미지가 있으면 표시 (다중 이미지 지원)
+                if (memo.images && memo.images.length > 0) {
+                    currentMemoImages = [...memo.images];
+                } else if (memo.image) {
+                    // 이전 버전 호환 (단일 이미지)
+                    currentMemoImages = [memo.image];
                 } else {
-                    currentMemoImage = null;
-                    imagePreviewContainer.classList.remove('active');
+                    currentMemoImages = [];
                 }
+                renderMemoImagePreviews();
             } else {
                 // 추가 모드
                 isEditMode = false;
@@ -11390,8 +11560,8 @@
                 titleEl.textContent = '새 메모';
                 titleInput.value = '';
                 contentInput.value = '';
-                currentMemoImage = null;
-                imagePreviewContainer.classList.remove('active');
+                currentMemoImages = [];
+                renderMemoImagePreviews();
             }
 
             // 파일 input 초기화
@@ -11430,35 +11600,83 @@
 
         // 이미지 선택 핸들러 (갤러리/카메라 구분)
         let lastImageSource = 'gallery'; // 마지막 이미지 소스 추적
+        const MAX_MEMO_IMAGES = 10; // 최대 이미지 개수
         
         function handleMemoImageSelect(event, source = 'gallery') {
-            const file = event.target.files[0];
-            if (file) {
-                // 파일 크기 체크 (5MB 제한)
-                if (file.size > 5 * 1024 * 1024) {
-                    showToast('이미지 크기는 5MB 이하로 선택해주세요.');
+            const files = event.target.files;
+            if (files && files.length > 0) {
+                lastImageSource = source;
+                
+                // 최대 이미지 개수 체크
+                const remainingSlots = MAX_MEMO_IMAGES - currentMemoImages.length;
+                if (remainingSlots <= 0) {
+                    showToast(`최대 ${MAX_MEMO_IMAGES}장까지만 추가할 수 있습니다.`);
                     event.target.value = '';
                     return;
                 }
-
-                lastImageSource = source;
                 
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    // 이미지 리사이징 (너무 크면 성능 이슈)
-                    resizeImage(e.target.result, 800, 800, function(resizedImage) {
-                        currentMemoImage = resizedImage;
-                        document.getElementById('memoImagePreview').src = resizedImage;
-                        document.getElementById('memoImagePreviewContainer').classList.add('active');
-                        
-                        // 카메라로 찍은 사진이면 앨범에 저장 안내
-                        if (source === 'camera') {
-                            saveImageToAlbum(resizedImage);
-                        }
-                    });
-                };
-                reader.readAsDataURL(file);
+                const filesToProcess = Array.from(files).slice(0, remainingSlots);
+                if (files.length > remainingSlots) {
+                    showToast(`${remainingSlots}장만 추가됩니다. (최대 ${MAX_MEMO_IMAGES}장)`);
+                }
+                
+                let processedCount = 0;
+                filesToProcess.forEach((file, index) => {
+                    // 파일 크기 체크 (5MB 제한)
+                    if (file.size > 5 * 1024 * 1024) {
+                        showToast(`${file.name}의 크기가 5MB를 초과합니다.`);
+                        processedCount++;
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // 이미지 리사이징 (너무 크면 성능 이슈)
+                        resizeImage(e.target.result, 800, 800, function(resizedImage) {
+                            currentMemoImages.push(resizedImage);
+                            renderMemoImagePreviews();
+                            
+                            // 카메라로 찍은 사진이면 앨범에 저장 안내
+                            if (source === 'camera') {
+                                saveImageToAlbum(resizedImage);
+                            }
+                            
+                            processedCount++;
+                            if (processedCount === filesToProcess.length) {
+                                event.target.value = ''; // 같은 파일 재선택 가능하도록 초기화
+                            }
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                });
             }
+        }
+        
+        // 다중 이미지 미리보기 렌더링
+        function renderMemoImagePreviews() {
+            const container = document.getElementById('memoImagePreviewContainer');
+            if (currentMemoImages.length === 0) {
+                container.classList.remove('active');
+                container.innerHTML = '';
+                return;
+            }
+            
+            container.classList.add('active');
+            let html = '<div class="memo-images-grid">';
+            currentMemoImages.forEach((img, index) => {
+                html += `
+                    <div class="memo-image-preview-item">
+                        <img src="${img}" alt="미리보기 ${index + 1}" class="memo-image-preview">
+                        <button type="button" class="memo-image-remove-btn" onclick="removeMemoImage(${index})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <span class="memo-image-index">${index + 1}</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            html += `<div class="memo-image-count">${currentMemoImages.length}/${MAX_MEMO_IMAGES}장</div>`;
+            container.innerHTML = html;
         }
 
         // 카메라 사진을 앨범에 저장하는 함수 (Flutter WebView 호환)
@@ -11529,11 +11747,18 @@
             img.src = dataUrl;
         }
 
-        // 이미지 제거
-        function removeMemoImage() {
-            currentMemoImage = null;
-            document.getElementById('memoImagePreview').src = '';
-            document.getElementById('memoImagePreviewContainer').classList.remove('active');
+        // 이미지 제거 (인덱스로 특정 이미지 제거)
+        function removeMemoImage(index) {
+            if (typeof index === 'number' && index >= 0 && index < currentMemoImages.length) {
+                currentMemoImages.splice(index, 1);
+                renderMemoImagePreviews();
+            }
+        }
+        
+        // 모든 메모 이미지 제거
+        function removeAllMemoImages() {
+            currentMemoImages = [];
+            renderMemoImagePreviews();
             document.getElementById('memoImageInput').value = '';
         }
 
@@ -11635,8 +11860,8 @@
             document.getElementById('memoFormModal').classList.remove('active');
             isEditMode = false;
             currentMemoId = null;
-            currentMemoImage = null;
-            document.getElementById('memoImagePreviewContainer').classList.remove('active');
+            currentMemoImages = [];
+            renderMemoImagePreviews();
         }
 
         // 메모 저장
@@ -11663,7 +11888,8 @@
                 if (index !== -1) {
                     targetMemos[index].title = title;
                     targetMemos[index].content = content;
-                    targetMemos[index].image = currentMemoImage;
+                    targetMemos[index].images = currentMemoImages.length > 0 ? [...currentMemoImages] : null;
+                    targetMemos[index].image = currentMemoImages.length > 0 ? currentMemoImages[0] : null; // 이전 버전 호환
                     targetMemos[index].updatedAt = dateStr;
                     targetMemos[index].updatedTime = timeStr;
                     showToast('메모가 수정되었습니다!');
@@ -11674,7 +11900,8 @@
                     id: Date.now(),
                     title: title,
                     content: content,
-                    image: currentMemoImage,
+                    images: currentMemoImages.length > 0 ? [...currentMemoImages] : null,
+                    image: currentMemoImages.length > 0 ? currentMemoImages[0] : null, // 이전 버전 호환
                     createdAt: dateStr,
                     createdTime: timeStr
                 };
@@ -11739,24 +11966,50 @@
             document.querySelector('#memoDetailDate span').textContent = dateText;
             document.getElementById('memoDetailTitle').textContent = memo.title;
             
-            // 이미지 표시
+            // 이미지 표시 (다중 이미지 지원)
             const detailContent = document.getElementById('memoDetailModal').querySelector('.memo-detail-content');
+            const existingImgContainer = detailContent.querySelector('.memo-detail-images-container');
             const existingImg = detailContent.querySelector('.memo-detail-image');
-            if (existingImg) {
-                existingImg.remove();
-            }
+            if (existingImgContainer) existingImgContainer.remove();
+            if (existingImg) existingImg.remove();
             
-            if (memo.image) {
-                const imgEl = document.createElement('img');
-                imgEl.src = memo.image;
-                imgEl.alt = '메모 이미지';
-                imgEl.className = 'memo-detail-image';
-                imgEl.onclick = function() {
-                    openImageFullscreen(memo.image);
-                };
-                // 제목 앞에 삽입
+            // 다중 이미지 또는 단일 이미지 확인
+            const images = memo.images || (memo.image ? [memo.image] : []);
+            if (images.length > 0) {
                 const titleEl = document.getElementById('memoDetailTitle');
-                titleEl.parentNode.insertBefore(imgEl, titleEl);
+                
+                if (images.length === 1) {
+                    // 단일 이미지
+                    const imgEl = document.createElement('img');
+                    imgEl.src = images[0];
+                    imgEl.alt = '메모 이미지';
+                    imgEl.className = 'memo-detail-image';
+                    imgEl.onclick = function() {
+                        openImageFullscreen(images[0]);
+                    };
+                    titleEl.parentNode.insertBefore(imgEl, titleEl);
+                } else {
+                    // 다중 이미지 - 슬라이더 형태
+                    const container = document.createElement('div');
+                    container.className = 'memo-detail-images-container';
+                    container.innerHTML = `
+                        <div class="memo-detail-images-slider" id="memoDetailSlider">
+                            ${images.map((img, idx) => `
+                                <img src="${img}" alt="메모 이미지 ${idx + 1}" class="memo-detail-slider-image" onclick="openImageFullscreen('${img}')">
+                            `).join('')}
+                        </div>
+                        <div class="memo-detail-images-nav">
+                            <button class="slider-nav-btn prev" onclick="slideMemoImages(-1)"><i class="fas fa-chevron-left"></i></button>
+                            <span class="slider-counter"><span id="currentSlideIndex">1</span> / ${images.length}</span>
+                            <button class="slider-nav-btn next" onclick="slideMemoImages(1)"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    `;
+                    titleEl.parentNode.insertBefore(container, titleEl);
+                    
+                    // 슬라이더 초기화
+                    window.currentSlideIdx = 0;
+                    window.totalSlides = images.length;
+                }
             }
             
             document.getElementById('memoDetailBody').textContent = memo.content || '(내용 없음)';
@@ -11781,6 +12034,25 @@
         // 이미지 전체화면 닫기
         function closeImageFullscreen() {
             document.getElementById('imageFullscreenOverlay').classList.remove('active');
+        }
+        
+        // 메모 상세보기 이미지 슬라이더
+        function slideMemoImages(direction) {
+            const slider = document.getElementById('memoDetailSlider');
+            if (!slider) return;
+            
+            window.currentSlideIdx = window.currentSlideIdx || 0;
+            window.currentSlideIdx += direction;
+            
+            if (window.currentSlideIdx < 0) window.currentSlideIdx = window.totalSlides - 1;
+            if (window.currentSlideIdx >= window.totalSlides) window.currentSlideIdx = 0;
+            
+            slider.scrollTo({
+                left: slider.clientWidth * window.currentSlideIdx,
+                behavior: 'smooth'
+            });
+            
+            document.getElementById('currentSlideIndex').textContent = window.currentSlideIdx + 1;
         }
 
         // 메모 상세보기 닫기
@@ -11910,10 +12182,11 @@
                 try {
                     // flutter_inappwebview 핸들러 사용 (권장)
                     if (window.flutter_inappwebview) {
+                        const shareImage = (memo.images && memo.images.length > 0) ? memo.images[0] : (memo.image || null);
                         window.flutter_inappwebview.callHandler('shareMemo', JSON.stringify({
                             title: shareTitle,
                             text: shareText,
-                            image: memo.image || null
+                            image: shareImage
                         }));
                         showToast('🔗 공유를 요청했습니다');
                         return;
@@ -11921,18 +12194,20 @@
                     
                     // 대체 채널들
                     if (window.FlutterShareChannel) {
+                        const shareImage2 = (memo.images && memo.images.length > 0) ? memo.images[0] : (memo.image || null);
                         window.FlutterShareChannel.postMessage(JSON.stringify({
                             action: 'shareMemo',
                             title: shareTitle,
                             text: shareText,
-                            image: memo.image || null
+                            image: shareImage2
                         }));
                         showToast('🔗 공유를 요청했습니다');
                         return;
                     }
                     
                     // Flutter 공유 요청 시도 (실패 시 폴백)
-                    if (requestFlutterShare(shareTitle, shareText, memo.image || null, function() {
+                    const shareImage3 = (memo.images && memo.images.length > 0) ? memo.images[0] : (memo.image || null);
+                    if (requestFlutterShare(shareTitle, shareText, shareImage3, function() {
                         showShareFallback(memo);
                     })) {
                         return;
@@ -12167,13 +12442,23 @@
                 memos.forEach(memo => {
                     const preview = memo.content ? memo.content.substring(0, 100) : '(내용 없음)';
                     const time = memo.createdTime || '';
-                    const hasImage = memo.image ? true : false;
+                    // 다중 이미지 또는 단일 이미지 확인
+                    const images = memo.images || (memo.image ? [memo.image] : []);
+                    const hasImages = images.length > 0;
+                    const thumbnailImage = hasImages ? images[0] : null;
+                    const imageCountBadge = images.length > 1 ? `<span class="image-count-badge">${images.length}</span>` : '';
+                    
                     html += `
                         <div class="memo-list-item" onclick="showMemoDetail(${JSON.stringify({id: memo.id}).replace(/"/g, '&quot;')})">
-                            ${hasImage ? `<img src="${memo.image}" alt="메모 이미지" class="memo-list-item-image">` : ''}
+                            ${thumbnailImage ? `
+                                <div class="memo-thumbnail-wrapper">
+                                    <img src="${thumbnailImage}" alt="메모 이미지" class="memo-list-item-image">
+                                    ${imageCountBadge}
+                                </div>
+                            ` : ''}
                             <h4>${escapeHtml(memo.title)}</h4>
                             <div class="memo-preview">${escapeHtml(preview)}</div>
-                            ${time ? `<div class="memo-time"><i class="fas fa-clock"></i> ${time}${hasImage ? ' · <i class="fas fa-image"></i>' : ''}</div>` : ''}
+                            ${time ? `<div class="memo-time"><i class="fas fa-clock"></i> ${time}${hasImages ? ` · <i class="fas fa-image"></i> ${images.length}` : ''}</div>` : ''}
                         </div>
                     `;
                 });
