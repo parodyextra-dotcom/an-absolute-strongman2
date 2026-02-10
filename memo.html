@@ -1058,17 +1058,32 @@
         .travel-card {
             background: white;
             border-radius: 20px;
-            padding: 20px;
+            padding: 0;
             margin-bottom: 15px;
             box-shadow: 0 4px 20px rgba(250, 112, 154, 0.12);
             transition: all 0.3s ease;
             cursor: pointer;
             border: 1px solid rgba(250, 112, 154, 0.1);
+            overflow: hidden;
         }
 
         .travel-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 30px rgba(250, 112, 154, 0.2);
+        }
+        
+        /* 이미지가 상단에 크게 표시되도록 */
+        .travel-card .list-thumb-wrapper {
+            margin-bottom: 0;
+            border-radius: 0;
+        }
+        
+        .travel-card .list-item-image {
+            height: 180px;
+        }
+        
+        .travel-card-content {
+            padding: 16px 20px 20px;
         }
 
         .travel-card-header {
@@ -1530,17 +1545,32 @@
         .restaurant-card {
             background: white;
             border-radius: 20px;
-            padding: 20px;
+            padding: 0;
             margin-bottom: 15px;
             box-shadow: 0 4px 20px rgba(255, 78, 80, 0.1);
             transition: all 0.3s ease;
             cursor: pointer;
             border: 1px solid rgba(255, 78, 80, 0.1);
+            overflow: hidden;
         }
 
         .restaurant-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 30px rgba(255, 78, 80, 0.18);
+        }
+        
+        /* 이미지가 상단에 크게 표시되도록 */
+        .restaurant-card .list-thumb-wrapper {
+            margin-bottom: 0;
+            border-radius: 0;
+        }
+        
+        .restaurant-card .list-item-image {
+            height: 180px;
+        }
+        
+        .restaurant-card-content {
+            padding: 16px 20px 20px;
         }
 
         .restaurant-card-header {
@@ -2004,17 +2034,32 @@
         .people-card {
             background: white;
             border-radius: 20px;
-            padding: 20px;
+            padding: 0;
             margin-bottom: 15px;
             box-shadow: 0 4px 20px rgba(255, 78, 80, 0.1);
             transition: all 0.3s ease;
             cursor: pointer;
             border: 1px solid rgba(255, 78, 80, 0.1);
+            overflow: hidden;
         }
 
         .people-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 30px rgba(255, 78, 80, 0.18);
+        }
+        
+        /* 이미지가 상단에 크게 표시되도록 */
+        .people-card .list-thumb-wrapper {
+            margin-bottom: 0;
+            border-radius: 0;
+        }
+        
+        .people-card .list-item-image {
+            height: 180px;
+        }
+        
+        .people-card-content {
+            padding: 16px 20px 20px;
         }
 
         .people-card-header {
@@ -2498,17 +2543,32 @@
         .culture-card {
             background: white;
             border-radius: 20px;
-            padding: 20px;
+            padding: 0;
             margin-bottom: 15px;
             box-shadow: 0 4px 20px rgba(255, 78, 80, 0.1);
             transition: all 0.3s ease;
             cursor: pointer;
             border: 1px solid rgba(255, 78, 80, 0.1);
+            overflow: hidden;
         }
 
         .culture-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 30px rgba(255, 78, 80, 0.18);
+        }
+        
+        /* 이미지가 상단에 크게 표시되도록 */
+        .culture-card .list-thumb-wrapper {
+            margin-bottom: 0;
+            border-radius: 0;
+        }
+        
+        .culture-card .list-item-image {
+            height: 180px;
+        }
+        
+        .culture-card-content {
+            padding: 16px 20px 20px;
         }
 
         .culture-card-header {
@@ -5245,21 +5305,24 @@
             gap: 6px;
         }
 
-        /* 썸네일 있는 리스트 아이템 */
+        /* 썸네일 있는 리스트 아이템 - 대표 이미지 상단 배치 */
         .memo-list-item.has-thumbnail {
             display: flex;
-            gap: 16px;
-            align-items: flex-start;
-            padding: 14px 16px;
+            flex-direction: column;
+            gap: 0;
+            padding: 0;
+            overflow: hidden;
         }
 
+        /* 대표 이미지 큰 썸네일 */
         .memo-thumbnail {
-            width: 80px;
-            height: 80px;
+            width: 100%;
+            height: 160px;
             flex-shrink: 0;
-            border-radius: 12px;
+            border-radius: 0;
             overflow: hidden;
             background: rgba(255, 255, 255, 0.05);
+            position: relative;
         }
 
         .memo-thumbnail img {
@@ -5268,13 +5331,54 @@
             object-fit: cover;
         }
 
+        /* 다중 이미지 썸네일 (상단 배치) */
+        .memo-multi-thumbnail {
+            width: 100%;
+            height: 160px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+            background: rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+        
+        .memo-multi-thumbnail.two-images {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .memo-multi-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .memo-multi-thumbnail .more-images-overlay {
+            position: relative;
+        }
+        
+        .memo-multi-thumbnail .more-images-overlay img {
+            filter: brightness(0.5);
+        }
+        
+        .memo-multi-thumbnail .more-images-count {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
         .memo-list-content {
             flex: 1;
             min-width: 0;
+            padding: 16px;
         }
 
         .memo-list-item.has-thumbnail h4 {
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .memo-list-item.has-thumbnail .memo-preview {
@@ -5283,7 +5387,21 @@
         }
 
         .memo-list-item.has-thumbnail .memo-time {
-            margin-top: 8px;
+            margin-top: 10px;
+        }
+        
+        /* 이미지 카운트 배지 (상단 이미지 위) */
+        .memo-thumbnail .image-count-badge,
+        .memo-multi-thumbnail .image-count-badge {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 500;
         }
 
         /* 플로팅 추가 버튼 */
@@ -5739,24 +5857,151 @@
             color: rgba(255, 255, 255, 0.5);
         }
         
-        /* 리스트 썸네일 다중 이미지 배지 */
+        /* 리스트 썸네일 다중 이미지 배지 - 첨부 이미지처럼 큰 대표 이미지 */
         .list-thumb-wrapper {
             position: relative;
-            display: inline-block;
+            display: block;
+            width: 100%;
+            margin-bottom: 12px;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .list-item-image {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            display: block;
+            margin-bottom: 0;
         }
         
         .list-image-count {
             position: absolute;
-            bottom: 4px;
-            right: 4px;
-            background: rgba(0, 0, 0, 0.7);
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.6);
             color: white;
-            font-size: 10px;
-            padding: 2px 5px;
-            border-radius: 4px;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
         
-        /* 상세보기 다중 이미지 그리드 */
+        .list-image-count::before {
+            content: '\f03e';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            font-size: 11px;
+        }
+        
+        /* 상세보기 이미지 슬라이더 - 화면 맞춤 */
+        .detail-image-slider-wrapper {
+            position: relative;
+            width: 100%;
+            max-height: 280px;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            background: #f5f5f5;
+        }
+        
+        .detail-image-slider {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .detail-image-slider::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .detail-slider-image {
+            flex: 0 0 100%;
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            scroll-snap-align: center;
+            cursor: pointer;
+        }
+        
+        .detail-slider-dots {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+        }
+        
+        .detail-slider-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .detail-slider-dot.active {
+            background: white;
+            transform: scale(1.2);
+        }
+        
+        .detail-slider-counter {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 12px;
+            padding: 5px 12px;
+            border-radius: 15px;
+        }
+        
+        .detail-slider-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+            opacity: 0;
+        }
+        
+        .detail-image-slider-wrapper:hover .detail-slider-nav {
+            opacity: 1;
+        }
+        
+        .detail-slider-nav.prev {
+            left: 10px;
+        }
+        
+        .detail-slider-nav.next {
+            right: 10px;
+        }
+        
+        .detail-slider-nav:hover {
+            background: white;
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        /* 상세보기 다중 이미지 그리드 - 레거시 호환 */
         .detail-images-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -7037,6 +7282,149 @@
             transform: scale(1.1);
         }
 
+        /* 커스텀 다중 이미지 그리드 스타일 */
+        .custom-multi-images-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .custom-multi-image-item {
+            position: relative;
+            aspect-ratio: 1;
+        }
+
+        .custom-multi-image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .custom-multi-image-item .custom-multi-image-remove {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            background: rgba(0, 0, 0, 0.7);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .custom-multi-image-item .custom-multi-image-remove:hover {
+            background: rgba(255, 107, 107, 0.9);
+            transform: scale(1.1);
+        }
+
+        .custom-multi-image-item .custom-multi-image-index {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .custom-multi-image-count {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* 상세보기 다중 이미지 갤러리 스타일 */
+        .memo-detail-gallery {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .memo-detail-gallery-item {
+            position: relative;
+            aspect-ratio: 1;
+            cursor: pointer;
+        }
+
+        .memo-detail-gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .memo-detail-gallery-item:hover img {
+            transform: scale(1.02);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .memo-detail-gallery-item .gallery-item-index {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* 리스트 다중 이미지 썸네일 */
+        .memo-multi-thumbnail {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .memo-multi-thumbnail.two-images {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .memo-multi-thumbnail img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+        }
+
+        .memo-multi-thumbnail .more-images-overlay {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        .memo-multi-thumbnail .more-images-overlay img {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .memo-multi-thumbnail .more-images-count {
+            position: relative;
+            z-index: 1;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
         /* 메모 상세보기 이미지 스타일 */
         .memo-image-field {
             flex-direction: column;
@@ -7334,6 +7722,474 @@
             background: rgba(255, 255, 255, 0.3);
         }
 
+        /* ========== 커스텀 메뉴 상세보기 (프리미엄 스타일) ========== */
+        .custom-detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #FDF8F3 0%, #F9F1EA 50%, #FEF0E8 100%);
+            z-index: 3001;
+            overflow: hidden;
+            animation: fadeInUp 0.3s ease;
+        }
+        
+        .custom-detail-modal.active {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 상단 고정 헤더 */
+        .custom-detail-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: transparent;
+            z-index: 100;
+        }
+        
+        .custom-detail-header.scrolled {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .custom-detail-header .back-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            color: #333;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s;
+        }
+        
+        .custom-detail-header .back-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+        }
+        
+        .custom-detail-header .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .custom-detail-header .action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            color: #666;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s;
+        }
+        
+        .custom-detail-header .action-btn:hover {
+            background: white;
+            transform: scale(1.05);
+        }
+        
+        .custom-detail-header .action-btn.delete-btn {
+            color: #e74c3c;
+        }
+        
+        .custom-detail-header .action-btn.delete-btn:hover {
+            background: #fee2e2;
+        }
+        
+        /* 스크롤 컨테이너 */
+        .custom-detail-scroll {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* 이미지 슬라이더 섹션 */
+        .custom-detail-slider-section {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            max-height: 400px;
+            background: linear-gradient(135deg, #e8d5c4 0%, #d4c4b0 100%);
+        }
+        
+        .custom-detail-slider {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .custom-detail-slider::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .custom-detail-slide {
+            flex: 0 0 100%;
+            width: 100%;
+            height: 100%;
+            scroll-snap-align: center;
+        }
+        
+        .custom-detail-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        
+        /* 슬라이더 카운터 뱃지 */
+        .custom-detail-counter {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.45);
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 14px;
+            border-radius: 20px;
+            backdrop-filter: blur(4px);
+            z-index: 50;
+        }
+        
+        /* 슬라이더 도트 인디케이터 */
+        .custom-detail-dots {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 50;
+        }
+        
+        .custom-detail-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .custom-detail-dot.active {
+            background: white;
+            transform: scale(1.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* 이미지 없을 때 플레이스홀더 */
+        .custom-detail-no-image {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #e8d5c4 0%, #d4c4b0 100%);
+            color: rgba(139, 110, 85, 0.6);
+        }
+        
+        .custom-detail-no-image i {
+            font-size: 64px;
+            margin-bottom: 12px;
+        }
+        
+        .custom-detail-no-image span {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        /* 콘텐츠 영역 */
+        .custom-detail-content {
+            padding: 28px 24px 40px;
+            background: linear-gradient(180deg, #FDF8F3 0%, #FEF0E8 100%);
+        }
+        
+        /* 타이틀 섹션 */
+        .custom-detail-title-section {
+            margin-bottom: 24px;
+        }
+        
+        .custom-detail-title {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+        
+        .custom-detail-title .title-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: white;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .custom-detail-title h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2d2520;
+            line-height: 1.3;
+            flex: 1;
+        }
+        
+        /* 장르/카테고리 태그 */
+        .custom-detail-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .custom-detail-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #FF6B6B 0%, #ee5a5a 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+        }
+        
+        /* 필드 아이템 리스트 */
+        .custom-detail-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .custom-detail-field {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 18px 20px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 2px 12px rgba(139, 110, 85, 0.08);
+            border: 1px solid rgba(139, 110, 85, 0.06);
+            transition: all 0.2s;
+        }
+        
+        .custom-detail-field:hover {
+            box-shadow: 0 4px 20px rgba(139, 110, 85, 0.12);
+            transform: translateY(-1px);
+        }
+        
+        .custom-detail-field .field-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .custom-detail-field .field-icon.genre-icon {
+            background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%);
+            color: #c44569;
+        }
+        
+        .custom-detail-field .field-icon.person-icon {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #5b8a8a;
+        }
+        
+        .custom-detail-field .field-icon.date-icon {
+            background: linear-gradient(135deg, #FFF5E6 0%, #FFE4CC 100%);
+            color: #d4a373;
+        }
+        
+        .custom-detail-field .field-icon.memo-icon {
+            background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+            color: #66bb6a;
+        }
+        
+        .custom-detail-field .field-icon.link-icon {
+            background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+            color: #42a5f5;
+        }
+        
+        .custom-detail-field .field-icon.default-icon {
+            background: linear-gradient(135deg, #F5F5F5 0%, #EEEEEE 100%);
+            color: #9e9e9e;
+        }
+        
+        .custom-detail-field .field-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .custom-detail-field .field-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #9e8b7d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        
+        .custom-detail-field .field-value {
+            font-size: 16px;
+            color: #2d2520;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+        
+        /* 등록일 필드 특별 스타일 */
+        .custom-detail-date-section {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px dashed rgba(139, 110, 85, 0.15);
+        }
+        
+        .custom-detail-date {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #9e8b7d;
+            font-size: 13px;
+        }
+        
+        .custom-detail-date i {
+            color: #d4a373;
+        }
+        
+        /* 테마 색상별 적용 */
+        .custom-detail-modal.theme-color-1 .custom-detail-title .title-icon,
+        .custom-detail-modal.theme-color-1 .custom-detail-tag { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
+        .custom-detail-modal.theme-color-2 .custom-detail-title .title-icon,
+        .custom-detail-modal.theme-color-2 .custom-detail-tag { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3); }
+        .custom-detail-modal.theme-color-3 .custom-detail-title .title-icon,
+        .custom-detail-modal.theme-color-3 .custom-detail-tag { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3); }
+        .custom-detail-modal.theme-color-4 .custom-detail-title .title-icon,
+        .custom-detail-modal.theme-color-4 .custom-detail-tag { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); box-shadow: 0 4px 12px rgba(250, 112, 154, 0.3); }
+        .custom-detail-modal.theme-color-5 .custom-detail-title .title-icon,
+        .custom-detail-modal.theme-color-5 .custom-detail-tag { background: linear-gradient(135deg, #f9d423 0%, #ff4e50 100%); box-shadow: 0 4px 12px rgba(255, 78, 80, 0.3); }
+        .custom-detail-modal.theme-color-6 .custom-detail-title .title-icon,
+        .custom-detail-modal.theme-color-6 .custom-detail-tag { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #5b8a8a; box-shadow: 0 4px 12px rgba(168, 237, 234, 0.3); }
+        .custom-detail-modal.theme-color-7 .custom-detail-title .title-icon,
+        .custom-detail-modal.theme-color-7 .custom-detail-tag { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); box-shadow: 0 4px 12px rgba(161, 140, 209, 0.3); }
+        .custom-detail-modal.theme-color-8 .custom-detail-title .title-icon,
+        .custom-detail-modal.theme-color-8 .custom-detail-tag { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); box-shadow: 0 4px 12px rgba(56, 239, 125, 0.3); }
+        .custom-detail-modal.theme-color-9 .custom-detail-title .title-icon,
+        .custom-detail-modal.theme-color-9 .custom-detail-tag { background: linear-gradient(135deg, #667db6 0%, #0082c8 100%); box-shadow: 0 4px 12px rgba(0, 130, 200, 0.3); }
+        .custom-detail-modal.theme-color-10 .custom-detail-title .title-icon,
+        .custom-detail-modal.theme-color-10 .custom-detail-tag { background: linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%); box-shadow: 0 4px 12px rgba(255, 95, 109, 0.3); }
+        
+        /* 스크롤바 스타일 */
+        .custom-detail-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        
+        .custom-detail-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .custom-detail-scroll::-webkit-scrollbar-thumb {
+            background: rgba(139, 110, 85, 0.2);
+            border-radius: 3px;
+        }
+        
+        /* 모바일 반응성 */
+        @media (max-width: 480px) {
+            .custom-detail-header {
+                padding: 12px 16px;
+            }
+            
+            .custom-detail-header .back-btn {
+                width: 40px;
+                height: 40px;
+                border-radius: 12px;
+            }
+            
+            .custom-detail-header .action-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 14px;
+            }
+            
+            .custom-detail-slider-section {
+                aspect-ratio: 1/1;
+                max-height: 360px;
+            }
+            
+            .custom-detail-content {
+                padding: 24px 20px 36px;
+            }
+            
+            .custom-detail-title h2 {
+                font-size: 20px;
+            }
+            
+            .custom-detail-title .title-icon {
+                width: 42px;
+                height: 42px;
+                font-size: 18px;
+            }
+            
+            .custom-detail-field {
+                padding: 16px;
+            }
+            
+            .custom-detail-field .field-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+            
+            .custom-detail-field .field-value {
+                font-size: 15px;
+            }
+        }
+        
+        /* 작은 화면 추가 대응 */
+        @media (max-width: 360px) {
+            .custom-detail-title h2 {
+                font-size: 18px;
+            }
+            
+            .custom-detail-content {
+                padding: 20px 16px 32px;
+            }
+        }
+        
         /* ========== 캘린더 일정관리 스타일 ========== */
         .schedule-modal-overlay {
             display: none;
@@ -9268,6 +10124,45 @@
         </div>
     </div>
 
+    <!-- 커스텀 메뉴 상세보기 모달 (프리미엄 스타일) -->
+    <div class="custom-detail-modal" id="customDetailModal">
+        <div class="custom-detail-header" id="customDetailHeader">
+            <button class="back-btn" onclick="closeCustomDetail()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="action-btns">
+                <button class="action-btn" onclick="copyCustomDetailContent()" title="복사">
+                    <i class="fas fa-copy"></i>
+                </button>
+                <button class="action-btn" onclick="shareCustomDetailContent()" title="공유">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+                <button class="action-btn" onclick="editCurrentCustomMemo()">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="action-btn delete-btn" onclick="deleteCurrentCustomMemo()">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div class="custom-detail-scroll" id="customDetailScroll">
+            <!-- 이미지 슬라이더 섹션 -->
+            <div class="custom-detail-slider-section" id="customDetailSliderSection">
+                <div class="custom-detail-slider" id="customDetailSlider">
+                    <!-- 슬라이드가 동적으로 생성됨 -->
+                </div>
+                <div class="custom-detail-counter" id="customDetailCounter">1 / 1</div>
+                <div class="custom-detail-dots" id="customDetailDots">
+                    <!-- 도트가 동적으로 생성됨 -->
+                </div>
+            </div>
+            <!-- 콘텐츠 영역 -->
+            <div class="custom-detail-content" id="customDetailContent">
+                <!-- 상세 내용이 동적으로 생성됨 -->
+            </div>
+        </div>
+    </div>
+
     <!-- 할일 목록 전체화면 모달 -->
     <div class="todo-fullscreen-modal" id="todoFullscreenModal">
         <div class="todo-modal-header">
@@ -10095,22 +10990,88 @@
             </div>`;
         }
         
-        // 상세보기용 다중 이미지 갤러리 렌더링
+        // 상세보기용 이미지 슬라이더 렌더링 (화면을 벗어나지 않게)
         function renderDetailImages(item, altText = '사진') {
             const images = getItemImages(item);
             if (images.length === 0) return '';
             
+            const sliderId = 'slider_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
             if (images.length === 1) {
-                return `<img src="${images[0]}" alt="${altText}" class="detail-item-image" onclick="openFullscreenImage('${images[0]}')">`;
+                return `<div class="detail-image-slider-wrapper">
+                    <img src="${images[0]}" alt="${altText}" class="detail-slider-image" onclick="openFullscreenImage('${images[0]}')">
+                </div>`;
             }
             
-            // 다중 이미지 그리드
-            let html = '<div class="detail-images-grid">';
+            // 다중 이미지 슬라이더
+            let html = `<div class="detail-image-slider-wrapper" data-slider-id="${sliderId}">
+                <div class="detail-image-slider" id="${sliderId}">`;
+            
             images.forEach((img, index) => {
-                html += `<img src="${img}" alt="${altText} ${index + 1}" class="detail-grid-image" onclick="openDetailImageGallery(${index}, '${btoa(JSON.stringify(images))}')">`;
+                html += `<img src="${img}" alt="${altText} ${index + 1}" class="detail-slider-image" onclick="openDetailImageGallery(${index}, '${btoa(JSON.stringify(images))}')">`;
             });
-            html += '</div>';
+            
+            html += `</div>
+                <div class="detail-slider-counter">1 / ${images.length}</div>
+                <button class="detail-slider-nav prev" onclick="slideDetail('${sliderId}', -1)"><i class="fas fa-chevron-left"></i></button>
+                <button class="detail-slider-nav next" onclick="slideDetail('${sliderId}', 1)"><i class="fas fa-chevron-right"></i></button>
+                <div class="detail-slider-dots">`;
+            
+            images.forEach((_, index) => {
+                html += `<span class="detail-slider-dot ${index === 0 ? 'active' : ''}" onclick="goToSlide('${sliderId}', ${index})"></span>`;
+            });
+            
+            html += `</div></div>`;
+            
+            // 슬라이더 스크롤 이벤트 등록
+            setTimeout(() => initDetailSlider(sliderId, images.length), 100);
+            
             return html;
+        }
+        
+        // 상세 이미지 슬라이더 초기화
+        function initDetailSlider(sliderId, totalImages) {
+            const slider = document.getElementById(sliderId);
+            if (!slider) return;
+            
+            const wrapper = slider.closest('.detail-image-slider-wrapper');
+            let currentIndex = 0;
+            
+            slider.addEventListener('scroll', () => {
+                const scrollLeft = slider.scrollLeft;
+                const imageWidth = slider.offsetWidth;
+                currentIndex = Math.round(scrollLeft / imageWidth);
+                
+                // 카운터 업데이트
+                const counter = wrapper.querySelector('.detail-slider-counter');
+                if (counter) counter.textContent = `${currentIndex + 1} / ${totalImages}`;
+                
+                // 닷 업데이트
+                wrapper.querySelectorAll('.detail-slider-dot').forEach((dot, i) => {
+                    dot.classList.toggle('active', i === currentIndex);
+                });
+            });
+        }
+        
+        // 슬라이드 이동
+        function slideDetail(sliderId, direction) {
+            const slider = document.getElementById(sliderId);
+            if (!slider) return;
+            
+            const imageWidth = slider.offsetWidth;
+            const currentScroll = slider.scrollLeft;
+            const newScroll = currentScroll + (direction * imageWidth);
+            
+            slider.scrollTo({ left: newScroll, behavior: 'smooth' });
+        }
+        
+        // 특정 슬라이드로 이동
+        function goToSlide(sliderId, index) {
+            const slider = document.getElementById(sliderId);
+            if (!slider) return;
+            
+            const imageWidth = slider.offsetWidth;
+            slider.scrollTo({ left: index * imageWidth, behavior: 'smooth' });
         }
         
         // 상세보기 이미지 갤러리 오픈
@@ -10321,18 +11282,20 @@
                 container.innerHTML = data.travels.map(travel => `
                     <div class="travel-card" onclick="openTravelDetail(${travel.id})">
                         ${renderListThumbnail(travel, '여행 사진')}
-                        <div class="travel-card-header">
-                            <div class="travel-card-title">
-                                <i class="fas fa-map-marker-alt"></i>
-                                ${travel.destination}
+                        <div class="travel-card-content">
+                            <div class="travel-card-header">
+                                <div class="travel-card-title">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    ${travel.destination}
+                                </div>
+                                <span class="travel-card-status">${travel.status}</span>
                             </div>
-                            <span class="travel-card-status">${travel.status}</span>
+                            <div class="travel-card-info">
+                                ${travel.period ? `<p><i class="fas fa-calendar-alt"></i> ${travel.period}</p>` : ''}
+                                ${travel.budget ? `<p><i class="fas fa-wallet"></i> ${travel.budget}</p>` : ''}
+                            </div>
+                            ${travel.memo ? `<div class="travel-card-memo">${travel.memo.substring(0, 50)}${travel.memo.length > 50 ? '...' : ''}</div>` : ''}
                         </div>
-                        <div class="travel-card-info">
-                            ${travel.period ? `<p><i class="fas fa-calendar-alt"></i> ${travel.period}</p>` : ''}
-                            ${travel.budget ? `<p><i class="fas fa-wallet"></i> ${travel.budget}</p>` : ''}
-                        </div>
-                        ${travel.memo ? `<div class="travel-card-memo">${travel.memo.substring(0, 50)}${travel.memo.length > 50 ? '...' : ''}</div>` : ''}
                     </div>
                 `).join('');
             }
@@ -10534,17 +11497,19 @@
                 container.innerHTML = data.restaurants.map(restaurant => `
                     <div class="restaurant-card" onclick="openRestaurantDetail(${restaurant.id})">
                         ${renderListThumbnail(restaurant, '맛집 사진')}
-                        <div class="restaurant-card-header">
-                            <div class="restaurant-card-title">
-                                <i class="fas fa-store"></i>
-                                ${restaurant.name}
+                        <div class="restaurant-card-content">
+                            <div class="restaurant-card-header">
+                                <div class="restaurant-card-title">
+                                    <i class="fas fa-store"></i>
+                                    ${restaurant.name}
+                                </div>
+                                <span class="restaurant-card-category">${restaurant.category}</span>
                             </div>
-                            <span class="restaurant-card-category">${restaurant.category}</span>
-                        </div>
-                        <div class="restaurant-card-rating">${'★'.repeat(restaurant.rating)}${'☆'.repeat(5 - restaurant.rating)}</div>
-                        <div class="restaurant-card-info">
-                            ${restaurant.location ? `<p><i class="fas fa-map-marker-alt"></i> ${restaurant.location}</p>` : ''}
-                            ${restaurant.menu ? `<p><i class="fas fa-utensils"></i> ${restaurant.menu}</p>` : ''}
+                            <div class="restaurant-card-rating">${'★'.repeat(restaurant.rating)}${'☆'.repeat(5 - restaurant.rating)}</div>
+                            <div class="restaurant-card-info">
+                                ${restaurant.location ? `<p><i class="fas fa-map-marker-alt"></i> ${restaurant.location}</p>` : ''}
+                                ${restaurant.menu ? `<p><i class="fas fa-utensils"></i> ${restaurant.menu}</p>` : ''}
+                            </div>
                         </div>
                     </div>
                 `).join('');
@@ -10791,16 +11756,18 @@
                 container.innerHTML = data.cultures.map(culture => `
                     <div class="culture-card" onclick="openCultureDetail(${culture.id})">
                         ${renderListThumbnail(culture, '문화 사진')}
-                        <div class="culture-card-header">
-                            <div class="culture-card-title">
-                                <i class="fas ${getCultureIcon(culture.genre)}"></i>
-                                ${escapeHtml(culture.target)}
+                        <div class="culture-card-content">
+                            <div class="culture-card-header">
+                                <div class="culture-card-title">
+                                    <i class="fas ${getCultureIcon(culture.genre)}"></i>
+                                    ${escapeHtml(culture.target)}
+                                </div>
+                                <span class="culture-card-genre">${escapeHtml(culture.genre)}</span>
                             </div>
-                            <span class="culture-card-genre">${escapeHtml(culture.genre)}</span>
-                        </div>
-                        <div class="culture-card-info">
-                            ${culture.content ? `<p><i class="fas fa-sticky-note"></i> ${escapeHtml(culture.content.substring(0, 50))}${culture.content.length > 50 ? '...' : ''}</p>` : ''}
-                            <p><i class="fas fa-clock"></i> ${culture.createdAt}</p>
+                            <div class="culture-card-info">
+                                ${culture.content ? `<p><i class="fas fa-sticky-note"></i> ${escapeHtml(culture.content.substring(0, 50))}${culture.content.length > 50 ? '...' : ''}</p>` : ''}
+                                <p><i class="fas fa-clock"></i> ${culture.createdAt}</p>
+                            </div>
                         </div>
                     </div>
                 `).join('');
@@ -11026,20 +11993,22 @@
                 container.innerHTML = data.people.map(person => `
                     <div class="people-card" onclick="openPeopleDetail(${person.id})">
                         ${renderListThumbnail(person, '인물 사진')}
-                        <div class="people-card-header">
-                            <div class="people-card-title">
-                                <i class="fas ${getPeopleIcon(person.relation)}"></i>
-                                ${escapeHtml(person.name)}
+                        <div class="people-card-content">
+                            <div class="people-card-header">
+                                <div class="people-card-title">
+                                    <i class="fas ${getPeopleIcon(person.relation)}"></i>
+                                    ${escapeHtml(person.name)}
+                                </div>
+                                <span class="people-card-relation">${escapeHtml(person.relation)}</span>
                             </div>
-                            <span class="people-card-relation">${escapeHtml(person.relation)}</span>
-                        </div>
-                        <div class="people-card-importance ${getImportanceClass(person.importance)}">
-                            ${getImportanceStars(person.importance)}
-                        </div>
-                        <div class="people-card-info">
-                            ${person.phone ? `<p><i class="fas fa-phone"></i> ${escapeHtml(person.phone)}</p>` : ''}
-                            ${person.email ? `<p><i class="fas fa-envelope"></i> ${escapeHtml(person.email)}</p>` : ''}
-                            ${person.note ? `<p><i class="fas fa-sticky-note"></i> ${escapeHtml(person.note.substring(0, 30))}${person.note.length > 30 ? '...' : ''}</p>` : ''}
+                            <div class="people-card-importance ${getImportanceClass(person.importance)}">
+                                ${getImportanceStars(person.importance)}
+                            </div>
+                            <div class="people-card-info">
+                                ${person.phone ? `<p><i class="fas fa-phone"></i> ${escapeHtml(person.phone)}</p>` : ''}
+                                ${person.email ? `<p><i class="fas fa-envelope"></i> ${escapeHtml(person.email)}</p>` : ''}
+                                ${person.note ? `<p><i class="fas fa-sticky-note"></i> ${escapeHtml(person.note.substring(0, 30))}${person.note.length > 30 ? '...' : ''}</p>` : ''}
+                            </div>
                         </div>
                     </div>
                 `).join('');
@@ -12942,19 +13911,21 @@
                     const images = memo.images || (memo.image ? [memo.image] : []);
                     const hasImages = images.length > 0;
                     const thumbnailImage = hasImages ? images[0] : null;
-                    const imageCountBadge = images.length > 1 ? `<span class="image-count-badge">${images.length}</span>` : '';
+                    const imageCountBadge = images.length > 1 ? `<span class="image-count-badge"><i class="fas fa-images"></i> ${images.length}</span>` : '';
                     
                     html += `
-                        <div class="memo-list-item" onclick="showMemoDetail(${JSON.stringify({id: memo.id}).replace(/"/g, '&quot;')})">
+                        <div class="memo-list-item ${hasImages ? 'has-thumbnail' : ''}" onclick="showMemoDetail(${JSON.stringify({id: memo.id}).replace(/"/g, '&quot;')})">
                             ${thumbnailImage ? `
-                                <div class="memo-thumbnail-wrapper">
-                                    <img src="${thumbnailImage}" alt="메모 이미지" class="memo-list-item-image">
+                                <div class="memo-thumbnail">
+                                    <img src="${thumbnailImage}" alt="메모 이미지">
                                     ${imageCountBadge}
                                 </div>
                             ` : ''}
-                            <h4>${escapeHtml(memo.title)}</h4>
-                            <div class="memo-preview">${escapeHtml(preview)}</div>
-                            ${time ? `<div class="memo-time"><i class="fas fa-clock"></i> ${time}${hasImages ? ` · <i class="fas fa-image"></i> ${images.length}` : ''}</div>` : ''}
+                            <div class="memo-list-content">
+                                <h4>${escapeHtml(memo.title)}</h4>
+                                <div class="memo-preview">${escapeHtml(preview)}</div>
+                                ${time ? `<div class="memo-time"><i class="fas fa-clock"></i> ${time}</div>` : ''}
+                            </div>
                         </div>
                     `;
                 });
@@ -13838,15 +14809,23 @@
                 memoList.forEach(memo => {
                     // 필드 기반 미리보기 생성 (이미지 필드는 제외)
                     let previewItems = [];
-                    let thumbnailImage = null;
+                    let thumbnailImages = [];
                     if (category && category.fields) {
                         category.fields.forEach(field => {
                             if (field.id > 1 && memo[`field${field.id}`]) {
                                 if (field.type === 'image') {
-                                    // 첫 번째 이미지를 썸네일로 사용
-                                    if (!thumbnailImage) {
-                                        thumbnailImage = memo[`field${field.id}`];
+                                    // 다중 이미지 처리
+                                    const value = memo[`field${field.id}`];
+                                    let images = [];
+                                    try {
+                                        images = JSON.parse(value);
+                                        if (!Array.isArray(images)) {
+                                            images = [value]; // 이전 버전 호환
+                                        }
+                                    } catch (e) {
+                                        images = value ? [value] : [];
                                     }
+                                    thumbnailImages = images;
                                 } else {
                                     previewItems.push(`${field.name}: ${memo[`field${field.id}`]}`);
                                 }
@@ -13859,9 +14838,22 @@
                     // title은 field1 값으로 표시
                     const displayTitle = memo.field1 || memo.title || '(제목 없음)';
                     
+                    // 다중 이미지 썸네일 HTML 생성 - 대표 이미지 1장 + 카운트 배지
+                    let thumbnailHtml = '';
+                    if (thumbnailImages.length > 0) {
+                        const imageCountBadge = thumbnailImages.length > 1 ? 
+                            `<span class="image-count-badge"><i class="fas fa-images"></i> ${thumbnailImages.length}</span>` : '';
+                        thumbnailHtml = `
+                            <div class="memo-thumbnail">
+                                <img src="${thumbnailImages[0]}" alt="썸네일">
+                                ${imageCountBadge}
+                            </div>
+                        `;
+                    }
+                    
                     html += `
-                        <div class="memo-list-item ${thumbnailImage ? 'has-thumbnail' : ''}" onclick="showCustomMemoDetail(${memo.id})">
-                            ${thumbnailImage ? `<div class="memo-thumbnail"><img src="${thumbnailImage}" alt="썸네일"></div>` : ''}
+                        <div class="memo-list-item ${thumbnailImages.length > 0 ? 'has-thumbnail' : ''}" onclick="showCustomMemoDetail(${memo.id})">
+                            ${thumbnailHtml}
                             <div class="memo-list-content">
                                 <h4>${escapeHtml(displayTitle)}</h4>
                                 ${preview ? `<div class="memo-preview">${escapeHtml(preview)}</div>` : ''}
@@ -13927,10 +14919,26 @@
                         formHtml += `<textarea id="customField${field.id}" class="custom-form-textarea" placeholder="${escapeHtml(field.name)}을(를) 입력하세요" ${requiredAttr}>${escapeHtml(value)}</textarea>`;
                         break;
                     case 'image':
+                        // 다중 이미지 지원 - value는 JSON 배열 또는 단일 이미지 URL
+                        let existingImages = [];
+                        if (value) {
+                            try {
+                                existingImages = JSON.parse(value);
+                                if (!Array.isArray(existingImages)) {
+                                    existingImages = [value]; // 이전 버전 호환 (단일 이미지)
+                                }
+                            } catch (e) {
+                                existingImages = value ? [value] : []; // 이전 버전 호환
+                            }
+                        }
+                        // 필드별 이미지 배열 초기화
+                        if (!window.customFieldImages) window.customFieldImages = {};
+                        window.customFieldImages[field.id] = existingImages;
+                        
                         formHtml += `
                             <div class="custom-form-image-section" id="customImageSection${field.id}">
-                                <input type="file" id="customImageInput${field.id}" accept="image/*" style="display: none;" onchange="handleCustomImageSelect(event, ${field.id})">
-                                <input type="file" id="customCameraInput${field.id}" accept="image/*" capture="environment" style="display: none;" onchange="handleCustomImageSelect(event, ${field.id})">
+                                <input type="file" id="customImageInput${field.id}" accept="image/*" multiple style="display: none;" onchange="handleCustomMultiImageSelect(event, ${field.id})">
+                                <input type="file" id="customCameraInput${field.id}" accept="image/*" capture="environment" style="display: none;" onchange="handleCustomMultiImageSelect(event, ${field.id})">
                                 <div class="custom-image-buttons">
                                     <label class="custom-image-upload-label gallery-btn" for="customImageInput${field.id}">
                                         <i class="fas fa-image"></i>
@@ -13941,13 +14949,8 @@
                                         <span>카메라</span>
                                     </label>
                                 </div>
-                                <div class="custom-image-preview-container ${value ? 'active' : ''}" id="customImagePreviewContainer${field.id}">
-                                    <img src="${value || ''}" alt="미리보기" class="custom-image-preview" id="customImagePreview${field.id}">
-                                    <button type="button" class="custom-image-remove-btn" onclick="removeCustomImage(${field.id})">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                                <input type="hidden" id="customField${field.id}" value="${escapeHtml(value)}">
+                                <div class="custom-image-preview-container" id="customImagePreviewContainer${field.id}"></div>
+                                <input type="hidden" id="customField${field.id}" value="">
                             </div>
                         `;
                         break;
@@ -13965,6 +14968,13 @@
             
             modal.classList.add('active');
             
+            // 다중 이미지 미리보기 렌더링
+            fields.forEach(field => {
+                if (field.type === 'image' && window.customFieldImages && window.customFieldImages[field.id]) {
+                    renderCustomMultiImagePreviews(field.id);
+                }
+            });
+            
             // 첫 번째 입력 필드에 포커스
             const firstInput = bodyEl.querySelector('input, select, textarea');
             if (firstInput) firstInput.focus();
@@ -13974,6 +14984,8 @@
         function closeCustomMemoForm() {
             document.getElementById('customMemoFormModal').classList.remove('active');
             customMemoEditId = null;
+            // 다중 이미지 배열 초기화
+            window.customFieldImages = {};
         }
 
         // 커스텀 메모 저장
@@ -13987,6 +14999,15 @@
             const memoData = {};
             for (const field of fields) {
                 if (!field.enabled) continue;
+                
+                // 이미지 필드의 경우 다중 이미지 배열 처리
+                if (field.type === 'image') {
+                    const images = window.customFieldImages && window.customFieldImages[field.id] 
+                        ? window.customFieldImages[field.id] 
+                        : [];
+                    memoData[`field${field.id}`] = images.length > 0 ? JSON.stringify(images) : '';
+                    continue;
+                }
                 
                 const input = document.getElementById(`customField${field.id}`);
                 if (!input) continue;
@@ -14040,7 +15061,7 @@
             renderCustomCategoryMemoList();
         }
 
-        // 커스텀 이미지 선택 핸들러
+        // 커스텀 이미지 선택 핸들러 (단일 이미지 - 이전 버전 호환용)
         function handleCustomImageSelect(event, fieldId) {
             const file = event.target.files[0];
             if (file) {
@@ -14064,7 +15085,7 @@
             }
         }
 
-        // 커스텀 이미지 제거
+        // 커스텀 이미지 제거 (단일 이미지 - 이전 버전 호환용)
         function removeCustomImage(fieldId) {
             document.getElementById(`customField${fieldId}`).value = '';
             document.getElementById(`customImagePreview${fieldId}`).src = '';
@@ -14074,7 +15095,110 @@
             if (cameraInput) cameraInput.value = '';
         }
 
-        // 커스텀 메모 상세보기
+        // ========== 다중 이미지 처리 함수들 ==========
+        const MAX_CUSTOM_IMAGES = 10; // 최대 이미지 개수
+
+        // 다중 이미지 선택 핸들러
+        function handleCustomMultiImageSelect(event, fieldId) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            // 이미지 배열 초기화
+            if (!window.customFieldImages) window.customFieldImages = {};
+            if (!window.customFieldImages[fieldId]) window.customFieldImages[fieldId] = [];
+
+            const currentImages = window.customFieldImages[fieldId];
+            const remainingSlots = MAX_CUSTOM_IMAGES - currentImages.length;
+
+            if (remainingSlots <= 0) {
+                showToast(`최대 ${MAX_CUSTOM_IMAGES}장까지만 추가할 수 있습니다.`);
+                event.target.value = '';
+                return;
+            }
+
+            const filesToProcess = Array.from(files).slice(0, remainingSlots);
+            if (files.length > remainingSlots) {
+                showToast(`${remainingSlots}장만 추가됩니다. (최대 ${MAX_CUSTOM_IMAGES}장)`);
+            }
+
+            let processedCount = 0;
+            filesToProcess.forEach((file) => {
+                // 파일 크기 체크 (5MB 제한)
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast(`${file.name}의 크기가 5MB를 초과합니다.`);
+                    processedCount++;
+                    if (processedCount === filesToProcess.length) {
+                        event.target.value = '';
+                    }
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // 이미지 리사이징
+                    resizeImage(e.target.result, 800, 800, function(resizedImage) {
+                        window.customFieldImages[fieldId].push(resizedImage);
+                        renderCustomMultiImagePreviews(fieldId);
+                        
+                        processedCount++;
+                        if (processedCount === filesToProcess.length) {
+                            event.target.value = ''; // 같은 파일 재선택 가능하도록 초기화
+                        }
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // 다중 이미지 미리보기 렌더링
+        function renderCustomMultiImagePreviews(fieldId) {
+            const container = document.getElementById(`customImagePreviewContainer${fieldId}`);
+            const images = window.customFieldImages[fieldId] || [];
+            
+            if (images.length === 0) {
+                container.classList.remove('active');
+                container.innerHTML = '';
+                return;
+            }
+
+            container.classList.add('active');
+            let html = '<div class="custom-multi-images-grid">';
+            images.forEach((img, index) => {
+                html += `
+                    <div class="custom-multi-image-item">
+                        <img src="${img}" alt="미리보기 ${index + 1}">
+                        <button type="button" class="custom-multi-image-remove" onclick="removeCustomMultiImage(${fieldId}, ${index})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <span class="custom-multi-image-index">${index + 1}</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            html += `<div class="custom-multi-image-count">${images.length}/${MAX_CUSTOM_IMAGES}장</div>`;
+            container.innerHTML = html;
+        }
+
+        // 다중 이미지 개별 제거
+        function removeCustomMultiImage(fieldId, index) {
+            if (!window.customFieldImages || !window.customFieldImages[fieldId]) return;
+            
+            window.customFieldImages[fieldId].splice(index, 1);
+            renderCustomMultiImagePreviews(fieldId);
+        }
+
+        // 다중 이미지 모두 제거
+        function clearCustomMultiImages(fieldId) {
+            if (window.customFieldImages) {
+                window.customFieldImages[fieldId] = [];
+            }
+            renderCustomMultiImagePreviews(fieldId);
+            document.getElementById(`customImageInput${fieldId}`).value = '';
+            const cameraInput = document.getElementById(`customCameraInput${fieldId}`);
+            if (cameraInput) cameraInput.value = '';
+        }
+
+        // 커스텀 메모 상세보기 (프리미엄 스타일)
         function showCustomMemoDetail(memoId) {
             const category = data.customCategories.find(c => c.id === currentCustomCategoryId);
             if (!category) return;
@@ -14087,41 +15211,390 @@
             
             const fields = category.fields || [{id: 1, enabled: true, type: 'text', name: '이름/제목', required: true}];
             
-            // 상세 내용 생성
-            let detailHtml = '';
+            // 모든 이미지 필드의 이미지들 수집
+            let allImages = [];
             fields.forEach(field => {
-                if (!field.enabled) return;
-                const value = memo[`field${field.id}`] || '';
-                if (value) {
-                    if (field.type === 'image') {
-                        detailHtml += `<div class="memo-field-item memo-image-field">`;
-                        detailHtml += `<span class="field-label">${escapeHtml(field.name)}</span>`;
-                        detailHtml += `<div class="field-image-container"><img src="${value}" alt="${escapeHtml(field.name)}" class="memo-detail-image" onclick="openImageFullscreen('${value}')"></div>`;
-                        detailHtml += `</div>`;
-                    } else {
-                        detailHtml += `<div class="memo-field-item">`;
-                        detailHtml += `<span class="field-label">${escapeHtml(field.name)}</span>`;
-                        detailHtml += `<span class="field-value">${escapeHtml(value)}</span>`;
-                        detailHtml += `</div>`;
+                if (field.enabled && field.type === 'image') {
+                    const value = memo[`field${field.id}`] || '';
+                    if (value) {
+                        try {
+                            const parsed = JSON.parse(value);
+                            if (Array.isArray(parsed)) {
+                                allImages = allImages.concat(parsed);
+                            } else {
+                                allImages.push(value);
+                            }
+                        } catch (e) {
+                            if (value) allImages.push(value);
+                        }
                     }
                 }
             });
             
-            // 상세보기 모달 업데이트
-            const titleEl = document.getElementById('memoDetailTitle');
-            const bodyEl = document.getElementById('memoDetailBody');
-            const dateEl = document.querySelector('#memoDetailDate span');
+            // 슬라이더 섹션 구성
+            const sliderSection = document.getElementById('customDetailSliderSection');
+            const slider = document.getElementById('customDetailSlider');
+            const counter = document.getElementById('customDetailCounter');
+            const dots = document.getElementById('customDetailDots');
             
-            titleEl.textContent = memo.field1 || '(제목 없음)';
-            bodyEl.innerHTML = detailHtml || '<p style="color: rgba(255,255,255,0.5);">내용이 없습니다.</p>';
-            dateEl.textContent = `${memo.createdAt} ${memo.createdTime || ''}`;
+            if (allImages.length > 0) {
+                sliderSection.style.display = 'block';
+                // 슬라이드 생성
+                slider.innerHTML = allImages.map((img, idx) => `
+                    <div class="custom-detail-slide">
+                        <img src="${img}" alt="이미지 ${idx + 1}" onclick="openMultiImageGallery(${JSON.stringify(allImages).replace(/"/g, '&quot;')}, ${idx})">
+                    </div>
+                `).join('');
+                
+                // 카운터 초기화
+                counter.textContent = `1 / ${allImages.length}`;
+                counter.style.display = allImages.length > 1 ? 'block' : 'none';
+                
+                // 도트 생성
+                if (allImages.length > 1) {
+                    dots.innerHTML = allImages.map((_, idx) => `
+                        <div class="custom-detail-dot ${idx === 0 ? 'active' : ''}" onclick="goToCustomSlide(${idx})"></div>
+                    `).join('');
+                    dots.style.display = 'flex';
+                } else {
+                    dots.style.display = 'none';
+                }
+                
+                // 슬라이더 스크롤 이벤트
+                slider.onscroll = function() {
+                    const slideWidth = slider.offsetWidth;
+                    const currentIndex = Math.round(slider.scrollLeft / slideWidth);
+                    updateCustomSliderUI(currentIndex, allImages.length);
+                };
+                
+                // 전역 변수에 이미지 저장
+                window.customDetailImages = allImages;
+            } else {
+                // 이미지가 없으면 플레이스홀더 표시
+                sliderSection.style.display = 'block';
+                slider.innerHTML = `
+                    <div class="custom-detail-no-image">
+                        <i class="fas fa-image"></i>
+                        <span>등록된 이미지가 없습니다</span>
+                    </div>
+                `;
+                counter.style.display = 'none';
+                dots.style.display = 'none';
+            }
             
-            // 테마 색상 적용 (아이콘 색상과 동기화)
-            const detailModal = document.getElementById('memoDetailModal');
-            detailModal.className = detailModal.className.replace(/theme-color-\d+/g, '').replace('custom-themed', '').trim();
-            detailModal.classList.add('custom-themed', 'theme-color-' + category.colorId);
+            // 콘텐츠 영역 구성
+            const contentEl = document.getElementById('customDetailContent');
+            let contentHtml = '';
             
+            // 타이틀 섹션
+            const title = memo.field1 || '(제목 없음)';
+            const iconClass = category.icon || 'fa-star';
+            contentHtml += `
+                <div class="custom-detail-title-section">
+                    <div class="custom-detail-title">
+                        <div class="title-icon"><i class="fas ${iconClass}"></i></div>
+                        <h2>${escapeHtml(title)}</h2>
+                    </div>
+            `;
+            
+            // 첫 번째 select 필드를 태그로 표시
+            const selectField = fields.find(f => f.enabled && f.type === 'select' && memo[`field${f.id}`]);
+            if (selectField) {
+                const selectValue = memo[`field${selectField.id}`];
+                contentHtml += `
+                    <div class="custom-detail-tags">
+                        <span class="custom-detail-tag">${escapeHtml(selectValue)}</span>
+                    </div>
+                `;
+            }
+            contentHtml += `</div>`;
+            
+            // 필드 아이템들
+            contentHtml += '<div class="custom-detail-fields">';
+            
+            fields.forEach((field, idx) => {
+                if (!field.enabled) return;
+                const value = memo[`field${field.id}`] || '';
+                if (!value) return;
+                
+                // 첫 번째 필드(제목)와 이미지 필드, 이미 태그로 표시한 select 필드는 건너뛰기
+                if (idx === 0) return;
+                if (field.type === 'image') return;
+                if (selectField && field.id === selectField.id) return;
+                
+                // 필드 타입에 따른 아이콘 결정
+                let iconType = 'default-icon';
+                let iconName = 'fa-tag';
+                
+                const fieldNameLower = field.name.toLowerCase();
+                if (field.type === 'select' || fieldNameLower.includes('장르') || fieldNameLower.includes('카테고리') || fieldNameLower.includes('종류')) {
+                    iconType = 'genre-icon';
+                    iconName = 'fa-bookmark';
+                } else if (fieldNameLower.includes('인물') || fieldNameLower.includes('대상') || fieldNameLower.includes('사람') || fieldNameLower.includes('작가') || fieldNameLower.includes('감독')) {
+                    iconType = 'person-icon';
+                    iconName = 'fa-user';
+                } else if (fieldNameLower.includes('날짜') || fieldNameLower.includes('등록') || fieldNameLower.includes('일시')) {
+                    iconType = 'date-icon';
+                    iconName = 'fa-calendar';
+                } else if (fieldNameLower.includes('메모') || fieldNameLower.includes('내용') || fieldNameLower.includes('설명') || fieldNameLower.includes('비고')) {
+                    iconType = 'memo-icon';
+                    iconName = 'fa-file-alt';
+                } else if (fieldNameLower.includes('링크') || fieldNameLower.includes('주소') || fieldNameLower.includes('url')) {
+                    iconType = 'link-icon';
+                    iconName = 'fa-link';
+                }
+                
+                contentHtml += `
+                    <div class="custom-detail-field">
+                        <div class="field-icon ${iconType}">
+                            <i class="fas ${iconName}"></i>
+                        </div>
+                        <div class="field-content">
+                            <div class="field-label">${escapeHtml(field.name)}</div>
+                            <div class="field-value">${escapeHtml(value)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            contentHtml += '</div>';
+            
+            // 등록일 섹션
+            contentHtml += `
+                <div class="custom-detail-date-section">
+                    <div class="custom-detail-date">
+                        <i class="fas fa-calendar-plus"></i>
+                        <span>등록일: ${memo.createdAt} ${memo.createdTime || ''}</span>
+                    </div>
+                </div>
+            `;
+            
+            contentEl.innerHTML = contentHtml;
+            
+            // 테마 색상 적용
+            const detailModal = document.getElementById('customDetailModal');
+            detailModal.className = 'custom-detail-modal theme-color-' + category.colorId;
             detailModal.classList.add('active');
+            
+            // 스크롤 위치 초기화
+            const scrollEl = document.getElementById('customDetailScroll');
+            scrollEl.scrollTop = 0;
+            
+            // 헤더 스크롤 효과
+            scrollEl.onscroll = function() {
+                const header = document.getElementById('customDetailHeader');
+                if (scrollEl.scrollTop > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            };
+        }
+        
+        // 커스텀 상세보기 슬라이더 UI 업데이트
+        function updateCustomSliderUI(currentIndex, total) {
+            const counter = document.getElementById('customDetailCounter');
+            const dots = document.querySelectorAll('#customDetailDots .custom-detail-dot');
+            
+            counter.textContent = `${currentIndex + 1} / ${total}`;
+            dots.forEach((dot, idx) => {
+                dot.classList.toggle('active', idx === currentIndex);
+            });
+        }
+        
+        // 특정 슬라이드로 이동
+        function goToCustomSlide(index) {
+            const slider = document.getElementById('customDetailSlider');
+            const slideWidth = slider.offsetWidth;
+            slider.scrollTo({ left: index * slideWidth, behavior: 'smooth' });
+        }
+        
+        // 커스텀 상세보기 닫기
+        function closeCustomDetail() {
+            const modal = document.getElementById('customDetailModal');
+            modal.classList.remove('active');
+        }
+        
+        // 커스텀 상세 내용 복사
+        function copyCustomDetailContent() {
+            const category = data.customCategories.find(c => c.id === currentCustomCategoryId);
+            if (!category) return;
+            
+            const memos = data.customCategoryMemos[currentCustomCategoryId] || [];
+            const memo = memos.find(m => m.id === currentMemoId);
+            if (!memo) return;
+            
+            const fields = category.fields || [];
+            let copyText = `[${category.name}]\n\n`;
+            
+            fields.forEach(field => {
+                if (!field.enabled) return;
+                const value = memo[`field${field.id}`] || '';
+                if (value && field.type !== 'image') {
+                    copyText += `${field.name}: ${value}\n`;
+                }
+            });
+            
+            copyText += `\n등록일: ${memo.createdAt} ${memo.createdTime || ''}`;
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(copyText).then(() => {
+                    showToast('내용이 클립보드에 복사되었습니다!');
+                }).catch(() => {
+                    fallbackCopyText(copyText);
+                });
+            } else {
+                fallbackCopyText(copyText);
+            }
+        }
+        
+        // 커스텀 상세 내용 공유
+        function shareCustomDetailContent() {
+            const category = data.customCategories.find(c => c.id === currentCustomCategoryId);
+            if (!category) return;
+            
+            const memos = data.customCategoryMemos[currentCustomCategoryId] || [];
+            const memo = memos.find(m => m.id === currentMemoId);
+            if (!memo) return;
+            
+            const fields = category.fields || [];
+            let shareText = `[${category.name}]\n\n`;
+            
+            fields.forEach(field => {
+                if (!field.enabled) return;
+                const value = memo[`field${field.id}`] || '';
+                if (value && field.type !== 'image') {
+                    shareText += `${field.name}: ${value}\n`;
+                }
+            });
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: memo.field1 || category.name,
+                    text: shareText
+                }).catch(() => {});
+            } else {
+                copyCustomDetailContent();
+            }
+        }
+        
+        // 현재 커스텀 메모 수정
+        function editCurrentCustomMemo() {
+            closeCustomDetail();
+            setTimeout(() => {
+                openCustomMemoForm(currentMemoId);
+            }, 100);
+        }
+        
+        // 현재 커스텀 메모 삭제
+        async function deleteCurrentCustomMemo() {
+            const result = await showCustomDialog({
+                title: '항목 삭제',
+                message: '이 항목을 삭제하시겠습니까?\n삭제된 항목은 복구할 수 없습니다.',
+                iconType: 'danger',
+                confirmText: '삭제',
+                confirmDanger: true
+            });
+            
+            if (result.confirmed) {
+                const memos = data.customCategoryMemos[currentCustomCategoryId] || [];
+                const index = memos.findIndex(m => m.id === currentMemoId);
+                if (index !== -1) {
+                    memos.splice(index, 1);
+                    saveData();
+                    closeCustomDetail();
+                    renderCustomCategoryMemos();
+                    showToast('항목이 삭제되었습니다.');
+                }
+            }
+        }
+
+        // 다중 이미지 갤러리 열기 (전체화면)
+        function openMultiImageGallery(images, startIndex = 0) {
+            if (!images || images.length === 0) return;
+            
+            // 전역 변수에 이미지 배열 저장
+            window.currentGalleryImages = images;
+            window.currentGalleryIndex = startIndex;
+            
+            // 갤러리 오버레이 생성 또는 업데이트
+            let overlay = document.getElementById('multiImageGalleryOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'multiImageGalleryOverlay';
+                overlay.className = 'fullscreen-gallery-overlay';
+                overlay.innerHTML = `
+                    <div class="gallery-header">
+                        <span class="gallery-counter" id="multiGalleryCounter"></span>
+                        <button class="gallery-close-btn" onclick="closeMultiImageGallery()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="gallery-body">
+                        <button class="gallery-nav-btn prev" onclick="prevMultiGalleryImage()">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <img class="gallery-main-image" id="multiGalleryMainImage" alt="갤러리 이미지">
+                        <button class="gallery-nav-btn next" onclick="nextMultiGalleryImage()">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="gallery-thumbnails" id="multiGalleryThumbnails"></div>
+                `;
+                document.body.appendChild(overlay);
+            }
+            
+            updateMultiImageGallery();
+            overlay.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 갤러리 업데이트
+        function updateMultiImageGallery() {
+            const images = window.currentGalleryImages || [];
+            const index = window.currentGalleryIndex || 0;
+            
+            document.getElementById('multiGalleryCounter').textContent = `${index + 1} / ${images.length}`;
+            document.getElementById('multiGalleryMainImage').src = images[index];
+            
+            // 썸네일 업데이트
+            const thumbnailsContainer = document.getElementById('multiGalleryThumbnails');
+            thumbnailsContainer.innerHTML = images.map((img, i) => `
+                <img src="${img}" alt="썸네일 ${i + 1}" 
+                    class="gallery-thumb ${i === index ? 'active' : ''}"
+                    onclick="goToMultiGalleryImage(${i})">
+            `).join('');
+        }
+
+        // 이전 이미지
+        function prevMultiGalleryImage() {
+            const images = window.currentGalleryImages || [];
+            window.currentGalleryIndex = (window.currentGalleryIndex - 1 + images.length) % images.length;
+            updateMultiImageGallery();
+        }
+
+        // 다음 이미지
+        function nextMultiGalleryImage() {
+            const images = window.currentGalleryImages || [];
+            window.currentGalleryIndex = (window.currentGalleryIndex + 1) % images.length;
+            updateMultiImageGallery();
+        }
+
+        // 특정 이미지로 이동
+        function goToMultiGalleryImage(index) {
+            window.currentGalleryIndex = index;
+            updateMultiImageGallery();
+        }
+
+        // 갤러리 닫기
+        function closeMultiImageGallery() {
+            const overlay = document.getElementById('multiImageGalleryOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+            document.body.style.overflow = '';
+            window.currentGalleryImages = null;
+            window.currentGalleryIndex = 0;
         }
 
         // ========== 데이터 관리 기능 ==========
