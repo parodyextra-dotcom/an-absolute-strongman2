@@ -3550,10 +3550,8 @@
       var inactiveFixedExpenses = state.fixedExpenses.filter(function(fe) { return !fe.active; });
       var totalMonthlyFixed = activeFixedExpenses.reduce(function(sum, fe) { return sum + fe.amount; }, 0);
       
-      // 표시할 고정비 (처음 2개)
-      var visibleFixedExpenses = activeFixedExpenses.slice(0, 2);
-      // 숨겨진 고정비 (3개 이상일 때)
-      var hiddenFixedExpenses = activeFixedExpenses.slice(2);
+      // 모든 고정비를 숨김 처리 (더보기로 표시)
+      var allFixedExpenses = activeFixedExpenses;
       
       var fixedExpenseHtml = '<div class="bg-white rounded-xl shadow-lg p-4 mb-4">' +
         '<div class="flex justify-between items-center mb-3">' +
@@ -3568,9 +3566,9 @@
         fixedExpenseHtml += '<div class="text-center text-gray-400 py-4">등록된 고정비가 없습니다.<br><span class="text-sm">거래 추가에서 "고정비" 체크 후 등록하세요.</span></div>';
       } else {
         if (activeFixedExpenses.length > 0) {
-          // 항상 보이는 항목들 (최대 2개)
-          fixedExpenseHtml += '<div class="space-y-2 mb-3">';
-          visibleFixedExpenses.forEach(function(fe) {
+          // 모든 항목을 숨김 처리 (더보기 클릭 시 표시)
+          fixedExpenseHtml += '<div id="fixed-expense-hidden" class="' + (fixedExpenseExpanded ? '' : 'hidden') + ' space-y-2 mb-3">';
+          allFixedExpenses.forEach(function(fe) {
             var payMethodLabel = fe.paymentMethod === 'card' ? '카드' : fe.paymentMethod === 'cash' ? '현금' : '기타';
             fixedExpenseHtml += '<div class="flex justify-between items-center p-3 bg-purple-50 rounded-lg border border-purple-200">' +
               '<div class="flex-1">' +
@@ -3589,33 +3587,10 @@
           });
           fixedExpenseHtml += '</div>';
           
-          // 숨겨진 항목들 (3개 이상일 때)
-          if (hiddenFixedExpenses.length > 0) {
-            fixedExpenseHtml += '<div id="fixed-expense-hidden" class="' + (fixedExpenseExpanded ? '' : 'hidden') + ' space-y-2 mb-3">';
-            hiddenFixedExpenses.forEach(function(fe) {
-              var payMethodLabel = fe.paymentMethod === 'card' ? '카드' : fe.paymentMethod === 'cash' ? '현금' : '기타';
-              fixedExpenseHtml += '<div class="flex justify-between items-center p-3 bg-purple-50 rounded-lg border border-purple-200">' +
-                '<div class="flex-1">' +
-                  '<div class="font-medium text-gray-800">' + fe.category + ' <span class="text-xs text-gray-500">(' + payMethodLabel + ')</span></div>' +
-                  '<div class="text-xs text-gray-500">매월 ' + fe.payDay + '일 | ' + fe.startDate + ' ~ ' + (fe.endDate || '무기한') + '</div>' +
-                  (fe.memo ? '<div class="text-xs text-gray-400 mt-1">' + fe.memo + '</div>' : '') +
-                '</div>' +
-                '<div class="text-right">' +
-                  '<div class="font-bold text-purple-600">' + formatNumber(fe.amount) + '원</div>' +
-                  '<div class="flex gap-1 mt-1">' +
-                    '<button onclick="editFixedExpense(' + fe.id + ')" class="text-xs text-blue-500 px-2 py-0.5 hover:bg-blue-50 rounded">수정</button>' +
-                    '<button onclick="deleteFixedExpense(' + fe.id + ')" class="text-xs text-red-500 px-2 py-0.5 hover:bg-red-50 rounded">종료</button>' +
-                  '</div>' +
-                '</div>' +
-              '</div>';
-            });
-            fixedExpenseHtml += '</div>';
-            
-            // 더보기/접기 버튼
-            fixedExpenseHtml += '<button id="fixed-expense-toggle-btn" onclick="toggleFixedExpenseList()" class="w-full py-2 text-sm text-purple-600 font-medium hover:bg-purple-50 rounded-lg transition flex items-center justify-center gap-1">' +
-              (fixedExpenseExpanded ? '<i data-lucide="chevron-up" class="w-4 h-4"></i> 접기' : '<i data-lucide="chevron-down" class="w-4 h-4"></i> 더보기 (' + hiddenFixedExpenses.length + '건)') +
-            '</button>';
-          }
+          // 더보기/접기 버튼 (항상 표시)
+          fixedExpenseHtml += '<button id="fixed-expense-toggle-btn" onclick="toggleFixedExpenseList()" class="w-full py-2 text-sm text-purple-600 font-medium hover:bg-purple-50 rounded-lg transition flex items-center justify-center gap-1">' +
+            (fixedExpenseExpanded ? '<i data-lucide="chevron-up" class="w-4 h-4"></i> 접기' : '<i data-lucide="chevron-down" class="w-4 h-4"></i> 더보기 (' + allFixedExpenses.length + '건)') +
+          '</button>';
         }
         
         if (inactiveFixedExpenses.length > 0) {
