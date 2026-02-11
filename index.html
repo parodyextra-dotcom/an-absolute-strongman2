@@ -123,8 +123,70 @@
     .animate-fade-in { animation: fadeIn 0.3s ease-out; }
     .animate-slide-left { animation: slideInLeft 0.25s ease-out; }
     .animate-slide-right { animation: slideInRight 0.25s ease-out; }
+    
+    /* 목표 매도환율 도달 깜박임 애니메이션 */
+    @keyframes sellTargetReached {
+      0%, 100% { 
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 50%, #dcfce7 100%);
+        box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+      }
+      50% { 
+        background: linear-gradient(135deg, #bbf7d0 0%, #22c55e 50%, #bbf7d0 100%);
+        box-shadow: 0 0 20px rgba(34, 197, 94, 0.8), 0 0 30px rgba(22, 163, 74, 0.4);
+      }
+    }
+    .sell-target-reached {
+      animation: sellTargetReached 1s ease-in-out infinite;
+      border: 2px solid #22c55e !important;
+      position: relative;
+    }
+    .sell-target-reached::before {
+      content: '💰 매도 타이밍!';
+      position: absolute;
+      top: -10px;
+      right: 10px;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: bold;
+      z-index: 10;
+    }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* 목표 매수환율 도달 깜박임 애니메이션 */
+    @keyframes buyTargetReached {
+      0%, 100% { 
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fef3c7 100%);
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+      }
+      50% { 
+        background: linear-gradient(135deg, #fde68a 0%, #f59e0b 50%, #fde68a 100%);
+        box-shadow: 0 0 25px rgba(245, 158, 11, 0.9), 0 0 40px rgba(217, 119, 6, 0.5);
+      }
+    }
+    .buy-target-reached {
+      animation: buyTargetReached 0.8s ease-in-out infinite;
+      border: 3px solid #f59e0b !important;
+      position: relative;
+    }
+    .buy-target-reached::before {
+      content: '🔥 매수 타이밍!';
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      z-index: 10;
+      white-space: nowrap;
+    }
     
     /* 숫자 키패드 모달 스타일 */
     @keyframes slideUp {
@@ -331,6 +393,8 @@
       soldItemsVisible: 10,
       usdInitialBudget: 10000000,
       jpyInitialBudget: 10000000,
+      usdTargetBuyRate: 0,
+      jpyTargetBuyRate: 0,
       categories: {
         expense: ['식비', '교통비', '통신비', '생활용품', '의료비', '교육비', '문화생활', '아버지', '지환', '다혜', '다연', '보험료', '외식비', '세금공과금', '주유비', '대출상환', '기타비'],
         income: ['급여', '이자', '대리업무', '배당금', '기타수입'],
@@ -518,6 +582,8 @@
           state.jpyNextId = data.exchangeData.jpyNextId || 1;
           state.usdInitialBudget = data.exchangeData.usdInitialBudget || 10000000;
           state.jpyInitialBudget = data.exchangeData.jpyInitialBudget || 10000000;
+          state.usdTargetBuyRate = data.exchangeData.usdTargetBuyRate || 0;
+          state.jpyTargetBuyRate = data.exchangeData.jpyTargetBuyRate || 0;
         }
         saveData();
         render();
@@ -662,7 +728,9 @@
           usdNextId: state.usdNextId,
           jpyNextId: state.jpyNextId,
           usdInitialBudget: state.usdInitialBudget,
-          jpyInitialBudget: state.jpyInitialBudget
+          jpyInitialBudget: state.jpyInitialBudget,
+          usdTargetBuyRate: state.usdTargetBuyRate,
+          jpyTargetBuyRate: state.jpyTargetBuyRate
         }
       });
     };
@@ -918,6 +986,8 @@
         state.jpyNextId = exchangeData.jpyNextId || 1;
         state.usdInitialBudget = exchangeData.usdInitialBudget || 10000000;
         state.jpyInitialBudget = exchangeData.jpyInitialBudget || 10000000;
+        state.usdTargetBuyRate = exchangeData.usdTargetBuyRate || 0;
+        state.jpyTargetBuyRate = exchangeData.jpyTargetBuyRate || 0;
       }
       state.profile = storage.get('profile') || { nickname: '', age: '', gender: '', marriage: '', job: '' };
       state.googleUser = storage.get('googleUser') || null;
@@ -959,7 +1029,9 @@
         usdNextId: state.usdNextId,
         jpyNextId: state.jpyNextId,
         usdInitialBudget: state.usdInitialBudget,
-        jpyInitialBudget: state.jpyInitialBudget
+        jpyInitialBudget: state.jpyInitialBudget,
+        usdTargetBuyRate: state.usdTargetBuyRate,
+        jpyTargetBuyRate: state.jpyTargetBuyRate
       });
       storage.set('profile', state.profile);
     }
@@ -7273,13 +7345,18 @@
         var cp = (f * currentRate) - p.amount;
         var isExpanded = state.expandedPhase === p.id;
         
-        return '<div class="bg-white rounded-xl shadow-md">' +
-          '<div onclick="toggleExpandPhase(' + p.id + ')" class="p-4 cursor-pointer ' + (p.completed ? 'bg-green-50' : 'bg-blue-50') + ' rounded-t-xl">' +
+        // 매수 완료된 항목에서 현재 환율이 목표 매도환율 이상이면 깜박임
+        var isSellTargetReached = p.completed && p.sellRate > 0 && currentRate >= p.sellRate;
+        var blinkClass = isSellTargetReached ? 'sell-target-reached' : '';
+        
+        return '<div class="bg-white rounded-xl shadow-md ' + blinkClass + '">' +
+          '<div onclick="toggleExpandPhase(' + p.id + ')" class="p-4 cursor-pointer ' + (p.completed ? (isSellTargetReached ? '' : 'bg-green-50') : 'bg-blue-50') + ' rounded-t-xl">' +
             '<div class="flex justify-between items-start">' +
               '<div class="flex-1">' +
                 '<p class="font-bold text-gray-800">' + (i + 1) + '차 매수</p>' +
                 '<p class="text-xs text-gray-600 mt-0.5">' + (p.completed ? '매수일: ' + p.date : '매수대기') + '</p>' +
                 (p.completed ? '<p class="text-xs font-bold mt-2 ' + (cp >= 0 ? 'text-red-600' : 'text-blue-600') + '">현재: ' + (cp >= 0 ? '+' : '') + (cp / 10000).toFixed(1) + '만원</p>' : '') +
+                (isSellTargetReached ? '<p class="text-xs font-bold text-green-600 mt-1">🎯 목표 ' + p.sellRate.toLocaleString() + '원 도달!</p>' : (p.completed && p.sellRate > 0 ? '<p class="text-xs text-gray-500 mt-1">목표 매도: ' + p.sellRate.toLocaleString() + '원</p>' : '')) +
               '</div>' +
               '<i data-lucide="' + (isExpanded ? 'chevron-up' : 'chevron-down') + '" class="w-5 h-5"></i>' +
             '</div>' +
@@ -7444,15 +7521,38 @@
           '<button onclick="setExchangeTab(\'JPY\')" class="flex-1 py-3 rounded-xl font-bold transition ' + (state.exchangeTab === 'JPY' ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white' : 'bg-gray-100 text-gray-600') + '">🇯🇵 JPY</button>' +
         '</div>' +
 
-        '<div class="bg-white rounded-2xl shadow-lg p-4">' +
-          '<div class="text-sm text-gray-500 mb-1 text-center">' + (state.exchangeTab === 'USD' ? '1달러당' : '100엔당') + '</div>' +
-          '<div class="flex items-center justify-center gap-3">' +
-            '<span class="text-4xl font-bold text-blue-600">' + currentRate.toFixed(2) + '</span>' +
-            '<span class="text-2xl font-bold text-gray-600">원</span>' +
-            '<button onclick="editExchangeRate()" class="text-blue-600 p-2"><i data-lucide="edit-2" class="w-6 h-6"></i></button>' +
-            '<button onclick="fetchExchangeRate()" class="text-green-600 p-2" id="refreshRateBtn"><i data-lucide="refresh-cw" class="w-6 h-6"></i></button>' +
-          '</div>' +
-        '</div>' +
+        (function() {
+          var targetBuyRate = state.exchangeTab === 'USD' ? state.usdTargetBuyRate : state.jpyTargetBuyRate;
+          var isBuyTiming = targetBuyRate > 0 && currentRate <= targetBuyRate;
+          var blinkClass = isBuyTiming ? 'buy-target-reached' : '';
+          return '<div id="realtime-rate-box" class="bg-white rounded-2xl shadow-lg p-4 ' + blinkClass + '">' +
+            '<div class="text-sm text-gray-500 mb-1 text-center">실시간 환율 (' + (state.exchangeTab === 'USD' ? '1달러당' : '100엔당') + ')</div>' +
+            '<div class="flex items-center justify-center gap-3">' +
+              '<span class="text-4xl font-bold text-blue-600">' + currentRate.toFixed(2) + '</span>' +
+              '<span class="text-2xl font-bold text-gray-600">원</span>' +
+              '<button onclick="editExchangeRate()" class="text-blue-600 p-2"><i data-lucide="edit-2" class="w-6 h-6"></i></button>' +
+              '<button onclick="fetchExchangeRate()" class="text-green-600 p-2" id="refreshRateBtn"><i data-lucide="refresh-cw" class="w-6 h-6"></i></button>' +
+            '</div>' +
+            '<div class="mt-3 pt-3 border-t border-gray-200">' +
+              '<div class="flex items-center justify-between">' +
+                '<div class="flex items-center gap-2">' +
+                  '<span class="text-sm font-semibold text-amber-600">🎯 목표 매수환율</span>' +
+                '</div>' +
+                '<div class="flex items-center gap-2">' +
+                  '<input type="number" id="targetBuyRateInput" value="' + (targetBuyRate > 0 ? targetBuyRate : '') + '" placeholder="미설정" step="0.01" onchange="updateTargetBuyRate(this.value)" class="w-24 px-2 py-1 text-right border border-gray-300 rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-400">' +
+                  '<span class="text-sm text-gray-600">원</span>' +
+                '</div>' +
+              '</div>' +
+              (targetBuyRate > 0 ? 
+                '<div class="mt-2 text-xs text-center ' + (isBuyTiming ? 'text-amber-600 font-bold' : 'text-gray-500') + '">' +
+                  (isBuyTiming ? 
+                    '✨ 현재 환율이 목표 매수가 이하입니다! 매수를 고려해보세요!' : 
+                    '현재 환율이 목표가보다 ' + (currentRate - targetBuyRate).toFixed(2) + '원 높습니다') +
+                '</div>' : 
+                '<div class="mt-2 text-xs text-center text-gray-400">목표 매수환율을 설정하면 알림을 받을 수 있습니다</div>') +
+            '</div>' +
+          '</div>';
+        })() +
 
         '<div class="bg-white rounded-xl shadow-lg p-4">' +
           '<div class="flex items-center justify-between mb-3">' +
@@ -7536,6 +7636,27 @@
       saveData();
       render();
       showToast('환율이 수정되었습니다');
+    }
+
+    function updateTargetBuyRate(value) {
+      var rate = parseFloat(value);
+      if (value === '' || value === null) rate = 0;
+      if (isNaN(rate) || rate < 0) { 
+        showToast('올바른 환율을 입력해주세요', 'error'); 
+        return; 
+      }
+      if (state.exchangeTab === 'USD') {
+        state.usdTargetBuyRate = rate;
+      } else {
+        state.jpyTargetBuyRate = rate;
+      }
+      saveData();
+      render();
+      if (rate > 0) {
+        showToast('목표 매수환율이 설정되었습니다: ' + rate + '원');
+      } else {
+        showToast('목표 매수환율이 해제되었습니다');
+      }
     }
 
     function fetchExchangeRate() {
