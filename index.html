@@ -356,10 +356,20 @@
     .animate-bounce-in {
       animation: bounceIn 0.5s ease-out;
     }
+    
+    /* 메모장 line-clamp 스타일 */
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
   </style>
 </head>
 <body class="bg-gray-50">
   <div id="app" class="max-w-md mx-auto bg-gray-50 min-h-screen pb-20"></div>
+  <!-- 메모 폼 모달 컨테이너 -->
+  <div id="memo-form-container" style="display: none; position: fixed; inset: 0; z-index: 9999;"></div>
 
   <script>
     // State Management
@@ -409,6 +419,12 @@
       showRankInfo: false,
       showIframeModal: false,
       showMemoModal: false,
+      memoActiveCategory: 'memo', // memo, todo, schedule
+      memoItems: [], // 일반 메모 저장
+      todoItems: [], // 할일 목록 저장
+      scheduleItems: [], // 일정 저장
+      memoEditingId: null, // 현재 편집 중인 메모 ID
+      memoSearchKeyword: '',
       showIncomeDetail: false,
       showExpenseDetail: false,
       showMonthlyBalance: false,
@@ -451,43 +467,54 @@
     var FlutterBridge = {
       // Check if running in Flutter WebView
       isFlutterWebView: function() {
-        return !!(window.FlutterChannel || window.flutter_inappwebview || window.FlutterWebView);
+        return !!(window.FlutterChannel || window.flutter_inappwebview || window.FlutterWebView || window.BudgetChannel);
       },
       
       // Send message to Flutter
       postMessage: function(action, data) {
-        var message = JSON.stringify({ action: action, data: data });
+        var message = JSON.stringify({ action: action, data: data, timestamp: Date.now() });
         
-        // Try different Flutter WebView channel methods
+        // Method 1: Custom JavaScriptChannel (recommended for webview_flutter)
+        if (window.BudgetChannel && window.BudgetChannel.postMessage) {
+          window.BudgetChannel.postMessage(message);
+          console.log('[FlutterBridge] Sent via BudgetChannel:', action);
+          return true;
+        }
+        
+        // Method 2: FlutterChannel
         if (window.FlutterChannel && window.FlutterChannel.postMessage) {
           window.FlutterChannel.postMessage(message);
+          console.log('[FlutterBridge] Sent via FlutterChannel:', action);
           return true;
         }
+        
+        // Method 3: flutter_inappwebview
         if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
-          window.flutter_inappwebview.callHandler('FlutterChannel', message);
+          window.flutter_inappwebview.callHandler('BudgetChannel', message);
+          console.log('[FlutterBridge] Sent via flutter_inappwebview:', action);
           return true;
         }
+        
+        // Method 4: FlutterWebView
         if (window.FlutterWebView && window.FlutterWebView.postMessage) {
           window.FlutterWebView.postMessage(message);
+          console.log('[FlutterBridge] Sent via FlutterWebView:', action);
           return true;
         }
-        // For webview_flutter package
-        if (window.JavaScriptChannel && window.JavaScriptChannel.postMessage) {
-          window.JavaScriptChannel.postMessage(message);
-          return true;
-        }
+        
+        console.log('[FlutterBridge] No Flutter channel available for action:', action);
         return false;
       },
       
       // Request file export (JSON backup)
       exportJSON: function(data, filename) {
         if (this.isFlutterWebView()) {
-          this.postMessage('exportJSON', { 
+          var success = this.postMessage('exportJSON', { 
             content: JSON.stringify(data, null, 2), 
             filename: filename,
             mimeType: 'application/json'
           });
-          return true;
+          return success;
         }
         return false;
       },
@@ -495,12 +522,12 @@
       // Request file export (CSV)
       exportCSV: function(content, filename) {
         if (this.isFlutterWebView()) {
-          this.postMessage('exportCSV', { 
+          var success = this.postMessage('exportCSV', { 
             content: content, 
             filename: filename,
             mimeType: 'text/csv'
           });
-          return true;
+          return success;
         }
         return false;
       },
@@ -508,11 +535,11 @@
       // Request file import (trigger file picker)
       requestImport: function() {
         if (this.isFlutterWebView()) {
-          this.postMessage('requestImport', { 
+          var success = this.postMessage('requestImport', { 
             accept: '.json',
             mimeTypes: ['application/json']
           });
-          return true;
+          return success;
         }
         return false;
       },
@@ -520,8 +547,10 @@
       // Confirm data clear
       confirmClearData: function() {
         if (this.isFlutterWebView()) {
-          this.postMessage('confirmClearData', {});
-          return true;
+          var success = this.postMessage('confirmClearData', {
+            message: '정말 모든 데이터를 삭제하시겠습니까?'
+          });
+          return success;
         }
         return false;
       },
@@ -531,6 +560,19 @@
         if (this.isFlutterWebView()) {
           this.postMessage('dataChanged', { type: type });
         }
+      },
+      
+      // Request share (for share functionality)
+      requestShare: function(content, filename, mimeType) {
+        if (this.isFlutterWebView()) {
+          var success = this.postMessage('requestShare', {
+            content: content,
+            filename: filename,
+            mimeType: mimeType
+          });
+          return success;
+        }
+        return false;
       },
       
       // 고정비 관련 Flutter 메시지 전송
@@ -549,6 +591,18 @@
           return true;
         }
         return false;
+      },
+      
+      // Get current platform info
+      getPlatformInfo: function() {
+        return {
+          isFlutterWebView: this.isFlutterWebView(),
+          hasBudgetChannel: !!window.BudgetChannel,
+          hasFlutterChannel: !!window.FlutterChannel,
+          hasInAppWebView: !!window.flutter_inappwebview,
+          hasFlutterWebView: !!window.FlutterWebView,
+          userAgent: navigator.userAgent
+        };
       }
     };
     
@@ -623,6 +677,78 @@
       showToast('모든 데이터가 삭제되었습니다');
       FlutterBridge.notifyDataChange('clearAll');
       return true;
+    };
+    
+    // Global function for Flutter to get all data (for backup)
+    window.handleFlutterGetAllData = function() {
+      var data = {
+        transactions: state.transactions,
+        memos: state.memos,
+        goals: state.goals,
+        bankBalances: state.bankBalances,
+        investments: state.investments,
+        dividends: state.dividends,
+        investmentJournals: state.investmentJournals,
+        loans: state.loans,
+        events: state.events,
+        categories: state.categories,
+        fixedExpenses: state.fixedExpenses,
+        exchangeData: {
+          usdPhases: state.usdPhases,
+          jpyPhases: state.jpyPhases,
+          usdRate: state.usdRate,
+          jpyRate: state.jpyRate,
+          usdNextId: state.usdNextId,
+          jpyNextId: state.jpyNextId,
+          usdInitialBudget: state.usdInitialBudget,
+          jpyInitialBudget: state.jpyInitialBudget
+        },
+        exportDate: new Date().toISOString(),
+        version: '2.1'
+      };
+      return JSON.stringify(data, null, 2);
+    };
+    
+    // Global function for Flutter to get CSV data (for export)
+    window.handleFlutterGetCSVData = function() {
+      var headers = ['날짜', '유형', '카테고리', '금액', '결제수단', '할부', '필요지출', '메모'];
+      var rows = state.transactions.map(function(t) {
+        return [
+          t.date,
+          t.type === 'income' ? '수입' : '지출',
+          t.category,
+          t.amount,
+          t.paymentMethod === 'card' ? '카드' : '현금',
+          t.installment || '일시불',
+          t.isNecessary ? '필요' : '불필요',
+          t.memo || ''
+        ];
+      });
+      var csvContent = [headers].concat(rows)
+        .map(function(row) { return row.map(function(cell) { return '"' + cell + '"'; }).join(','); })
+        .join('\n');
+      var BOM = '\uFEFF';
+      return BOM + csvContent;
+    };
+    
+    // Global function for Flutter to show result message
+    window.handleFlutterShowMessage = function(message, type) {
+      showToast(message, type || 'success');
+      return true;
+    };
+    
+    // Global function to check if web app is ready
+    window.handleFlutterIsReady = function() {
+      return JSON.stringify({
+        ready: true,
+        version: '2.1',
+        platform: FlutterBridge.getPlatformInfo(),
+        dataCount: {
+          transactions: state.transactions.length,
+          investments: state.investments.length,
+          loans: state.loans.length
+        }
+      });
     };
     
     // Flutter WebView에서 고정비 조작을 위한 글로벌 함수들
@@ -991,6 +1117,10 @@
       }
       state.profile = storage.get('profile') || { nickname: '', age: '', gender: '', marriage: '', job: '' };
       state.googleUser = storage.get('googleUser') || null;
+      
+      // 메모장 데이터 로드
+      loadMemoData();
+      
       state.isLoading = false;
       
       // 구글 로그인 초기화
@@ -1981,20 +2111,30 @@
       };
       
       var filename = 'budget_backup_' + new Date().toISOString().split('T')[0] + '.json';
+      var jsonContent = JSON.stringify(data, null, 2);
       
       // Try Flutter WebView first
-      if (FlutterBridge.exportJSON(data, filename)) {
+      if (FlutterBridge.isFlutterWebView()) {
+        console.log('[exportData] Flutter WebView detected, sending exportJSON request');
+        FlutterBridge.postMessage('exportJSON', { 
+          content: jsonContent, 
+          filename: filename,
+          mimeType: 'application/json'
+        });
         showToast('데이터 백업을 요청했습니다');
         return;
       }
       
       // Fallback to browser download
-      var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      console.log('[exportData] Browser fallback - creating download link');
+      var blob = new Blob([jsonContent], { type: 'application/json' });
       var url = URL.createObjectURL(blob);
       var link = document.createElement('a');
       link.href = url;
       link.download = filename;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
       showToast('데이터가 백업되었습니다');
     }
@@ -2023,18 +2163,27 @@
       var filename = '거래내역_' + new Date().toISOString().split('T')[0] + '.csv';
       
       // Try Flutter WebView first
-      if (FlutterBridge.exportCSV(fullContent, filename)) {
+      if (FlutterBridge.isFlutterWebView()) {
+        console.log('[exportToCSV] Flutter WebView detected, sending exportCSV request');
+        FlutterBridge.postMessage('exportCSV', { 
+          content: fullContent, 
+          filename: filename,
+          mimeType: 'text/csv'
+        });
         showToast('거래내역 내보내기를 요청했습니다');
         return;
       }
       
       // Fallback to browser download
+      console.log('[exportToCSV] Browser fallback - creating download link');
       var blob = new Blob([fullContent], { type: 'text/csv;charset=utf-8;' });
       var url = URL.createObjectURL(blob);
       var link = document.createElement('a');
       link.href = url;
       link.download = filename;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
       showToast('CSV 파일이 다운로드되었습니다');
     }
@@ -2101,9 +2250,14 @@
     // Trigger import for Flutter WebView (can be called directly)
     function triggerImport() {
       if (FlutterBridge.isFlutterWebView()) {
-        FlutterBridge.requestImport();
+        console.log('[triggerImport] Flutter WebView detected, sending requestImport');
+        FlutterBridge.postMessage('requestImport', { 
+          accept: '.json',
+          mimeTypes: ['application/json']
+        });
         showToast('파일 선택을 요청했습니다');
       } else {
+        console.log('[triggerImport] Browser fallback - clicking file input');
         document.getElementById('importFile').click();
       }
     }
@@ -8358,24 +8512,732 @@
       '</div>';
     }
 
-    // Memo Modal - 메모 모달창
+    // Memo Modal - 메모 모달창 (내장 메모장)
     function renderMemoModal() {
-      return '<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="padding: 0; margin: 0;" onclick="if(event.target===this){state.showMemoModal=false;render();}">' +
-        '<div class="bg-white w-full h-full max-w-full max-h-full overflow-hidden shadow-2xl" style="border-radius: 0;">' +
-          '<div class="bg-gradient-to-r from-amber-500 to-orange-600 p-3" style="flex-shrink: 0;">' +
-            '<div class="flex justify-between items-center">' +
+      var cat = state.memoActiveCategory;
+      var searchKeyword = state.memoSearchKeyword || '';
+      
+      // 카테고리별 아이콘과 색상
+      var categoryConfig = {
+        memo: { icon: '📝', label: '일반 메모', gradient: 'from-violet-500 to-purple-600', lightBg: 'bg-violet-50', textColor: 'text-violet-600', btnBg: 'from-violet-500 to-purple-600' },
+        todo: { icon: '✅', label: '할일 목록', gradient: 'from-pink-500 to-rose-600', lightBg: 'bg-pink-50', textColor: 'text-pink-600', btnBg: 'from-pink-500 to-rose-600' },
+        schedule: { icon: '📅', label: '일정 관리', gradient: 'from-sky-500 to-blue-600', lightBg: 'bg-sky-50', textColor: 'text-sky-600', btnBg: 'from-sky-500 to-blue-600' }
+      };
+      var config = categoryConfig[cat];
+      
+      // 상단 탭 메뉴
+      var tabsHtml = Object.keys(categoryConfig).map(function(key) {
+        var c = categoryConfig[key];
+        var isActive = cat === key;
+        var count = key === 'memo' ? state.memoItems.length : (key === 'todo' ? state.todoItems.length : state.scheduleItems.length);
+        return '<button onclick="state.memoActiveCategory=\'' + key + '\';state.memoEditingId=null;render()" class="flex-1 flex flex-col items-center gap-1 py-3 px-2 rounded-xl transition-all ' + (isActive ? 'bg-white shadow-lg transform scale-105' : 'hover:bg-white hover:bg-opacity-50') + '">' +
+          '<span class="text-2xl">' + c.icon + '</span>' +
+          '<span class="text-xs font-bold ' + (isActive ? c.textColor : 'text-gray-600') + '">' + c.label + '</span>' +
+          '<span class="text-xs px-2 py-0.5 rounded-full ' + (isActive ? 'bg-gradient-to-r ' + c.gradient + ' text-white' : 'bg-gray-200 text-gray-600') + '">' + count + '</span>' +
+        '</button>';
+      }).join('');
+      
+      // 검색바
+      var searchBarHtml = '<div class="relative">' +
+        '<input type="text" id="memoSearchInput" value="' + searchKeyword + '" placeholder="검색어를 입력하세요..." class="w-full pl-10 pr-10 py-3 rounded-xl border-2 border-gray-200 focus:border-violet-400 focus:outline-none transition text-sm" onkeyup="state.memoSearchKeyword=this.value;render()">' +
+        '<i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"></i>' +
+        (searchKeyword ? '<button onclick="state.memoSearchKeyword=\'\';render()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>' : '') +
+      '</div>';
+      
+      // 컨텐츠 렌더링
+      var contentHtml = '';
+      if (cat === 'memo') {
+        contentHtml = renderMemoList(searchKeyword);
+      } else if (cat === 'todo') {
+        contentHtml = renderTodoList(searchKeyword);
+      } else if (cat === 'schedule') {
+        contentHtml = renderScheduleList(searchKeyword);
+      }
+      
+      return '<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="padding: 0; margin: 0;" onclick="if(event.target===this){state.showMemoModal=false;state.memoEditingId=null;render();}">' +
+        '<div class="bg-gradient-to-br from-gray-50 to-gray-100 w-full h-full max-w-full max-h-full overflow-hidden shadow-2xl flex flex-col" style="border-radius: 0;">' +
+          // 헤더
+          '<div class="bg-gradient-to-r ' + config.gradient + ' p-4 flex-shrink-0">' +
+            '<div class="flex justify-between items-center mb-4">' +
               '<div class="flex items-center gap-3">' +
-                '<div class="bg-white bg-opacity-20 p-2 rounded-lg"><span class="text-xl">📝</span></div>' +
-                '<div><h2 class="text-lg font-bold text-white">메모</h2><p class="text-amber-100 text-xs">나의 모든 기록</p></div>' +
+                '<div class="bg-white bg-opacity-20 p-2.5 rounded-xl"><span class="text-2xl">' + config.icon + '</span></div>' +
+                '<div>' +
+                  '<h2 class="text-xl font-bold text-white">절대강자 메모장</h2>' +
+                  '<p class="text-white text-opacity-80 text-xs">모든 기록을 한 곳에서 간편하게</p>' +
+                '</div>' +
               '</div>' +
-              '<button onclick="state.showMemoModal=false;render()" class="text-white text-2xl hover:bg-white hover:bg-opacity-20 rounded-full w-10 h-10 flex items-center justify-center transition" style="-webkit-tap-highlight-color: transparent;">✕</button>' +
+              '<button onclick="state.showMemoModal=false;state.memoEditingId=null;render()" class="text-white text-2xl hover:bg-white hover:bg-opacity-20 rounded-full w-10 h-10 flex items-center justify-center transition">' +
+                '<i data-lucide="x" class="w-6 h-6"></i>' +
+              '</button>' +
+            '</div>' +
+            // 탭 메뉴
+            '<div class="bg-white bg-opacity-20 rounded-2xl p-2 flex gap-2">' +
+              tabsHtml +
             '</div>' +
           '</div>' +
-          '<div class="w-full" style="height: calc(100vh - 60px); height: calc(100dvh - 60px); overflow: hidden;">' +
-            '<iframe id="memoIframe" src="memo.html" class="w-full h-full border-0" style="-webkit-overflow-scrolling: touch;" allow="fullscreen" allowfullscreen></iframe>' +
+          // 검색 및 컨텐츠
+          '<div class="flex-1 overflow-y-auto p-4 space-y-4">' +
+            searchBarHtml +
+            contentHtml +
+          '</div>' +
+          // 하단 추가 버튼
+          '<div class="flex-shrink-0 p-4 bg-white border-t shadow-lg">' +
+            '<button onclick="openMemoAddForm(\'' + cat + '\')" class="w-full py-4 bg-gradient-to-r ' + config.btnBg + ' text-white rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition">' +
+              '<i data-lucide="plus" class="w-6 h-6"></i>' +
+              '<span>' + config.label + ' 추가하기</span>' +
+            '</button>' +
           '</div>' +
         '</div>' +
       '</div>';
+    }
+    
+    // 일반 메모 목록 렌더링
+    function renderMemoList(keyword) {
+      var items = state.memoItems || [];
+      if (keyword) {
+        items = items.filter(function(m) {
+          return (m.title && m.title.toLowerCase().includes(keyword.toLowerCase())) || 
+                 (m.content && m.content.toLowerCase().includes(keyword.toLowerCase()));
+        });
+      }
+      items = items.slice().sort(function(a, b) { return new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt); });
+      
+      if (items.length === 0) {
+        return '<div class="text-center py-16">' +
+          '<div class="text-6xl mb-4 opacity-50">📝</div>' +
+          '<p class="text-gray-500 text-lg font-medium">메모가 없습니다</p>' +
+          '<p class="text-gray-400 text-sm mt-1">새로운 메모를 추가해보세요</p>' +
+        '</div>';
+      }
+      
+      return '<div class="space-y-3">' +
+        items.map(function(m) {
+          var dateStr = formatMemoDate(m.updatedAt || m.createdAt);
+          var colors = getMemoColor(m.color || 'purple');
+          return '<div class="bg-white rounded-2xl p-4 shadow-md hover:shadow-lg transition-all border-l-4 ' + colors.border + '" onclick="viewMemoDetail(\'' + m.id + '\')">' +
+            '<div class="flex justify-between items-start mb-2">' +
+              '<h3 class="font-bold text-gray-800 text-lg flex-1 pr-2">' + escapeHtml(m.title || '제목 없음') + '</h3>' +
+              '<div class="flex gap-1">' +
+                '<button onclick="event.stopPropagation();editMemo(\'' + m.id + '\')" class="w-8 h-8 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center hover:bg-violet-200 transition">' +
+                  '<i data-lucide="edit-2" class="w-4 h-4"></i>' +
+                '</button>' +
+                '<button onclick="event.stopPropagation();deleteMemo(\'' + m.id + '\')" class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200 transition">' +
+                  '<i data-lucide="trash-2" class="w-4 h-4"></i>' +
+                '</button>' +
+              '</div>' +
+            '</div>' +
+            '<p class="text-gray-600 text-sm line-clamp-2 mb-3">' + escapeHtml(m.content || '').substring(0, 100) + (m.content && m.content.length > 100 ? '...' : '') + '</p>' +
+            '<div class="flex items-center gap-2 text-xs text-gray-400">' +
+              '<i data-lucide="clock" class="w-3 h-3"></i>' +
+              '<span>' + dateStr + '</span>' +
+            '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>';
+    }
+    
+    // 할일 목록 렌더링
+    function renderTodoList(keyword) {
+      var items = state.todoItems || [];
+      if (keyword) {
+        items = items.filter(function(t) {
+          return t.title && t.title.toLowerCase().includes(keyword.toLowerCase());
+        });
+      }
+      
+      var pendingItems = items.filter(function(t) { return !t.completed; });
+      var completedItems = items.filter(function(t) { return t.completed; });
+      
+      if (items.length === 0) {
+        return '<div class="text-center py-16">' +
+          '<div class="text-6xl mb-4 opacity-50">✅</div>' +
+          '<p class="text-gray-500 text-lg font-medium">할일이 없습니다</p>' +
+          '<p class="text-gray-400 text-sm mt-1">새로운 할일을 추가해보세요</p>' +
+        '</div>';
+      }
+      
+      var html = '';
+      
+      // 진행중인 할일
+      if (pendingItems.length > 0) {
+        html += '<div class="mb-4">' +
+          '<div class="flex items-center gap-2 mb-3">' +
+            '<span class="bg-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full">진행중 ' + pendingItems.length + '</span>' +
+          '</div>' +
+          '<div class="space-y-2">' +
+            pendingItems.map(function(t) {
+              var priorityColor = t.priority === 'high' ? 'bg-red-500' : (t.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500');
+              return '<div class="bg-white rounded-xl p-4 shadow-md flex items-center gap-3 border-l-4 border-pink-400">' +
+                '<button onclick="toggleTodoComplete(\'' + t.id + '\')" class="w-7 h-7 rounded-full border-2 border-pink-400 flex items-center justify-center hover:bg-pink-100 transition flex-shrink-0">' +
+                '</button>' +
+                '<div class="flex-1 min-w-0">' +
+                  '<p class="font-semibold text-gray-800 truncate">' + escapeHtml(t.title) + '</p>' +
+                  (t.dueDate ? '<p class="text-xs text-gray-400 mt-1"><i data-lucide="calendar" class="w-3 h-3 inline mr-1"></i>' + t.dueDate + '</p>' : '') +
+                '</div>' +
+                '<div class="w-2.5 h-2.5 rounded-full ' + priorityColor + ' flex-shrink-0"></div>' +
+                '<button onclick="deleteTodo(\'' + t.id + '\')" class="w-8 h-8 rounded-lg text-gray-400 hover:bg-red-100 hover:text-red-500 flex items-center justify-center transition flex-shrink-0">' +
+                  '<i data-lucide="trash-2" class="w-4 h-4"></i>' +
+                '</button>' +
+              '</div>';
+            }).join('') +
+          '</div>' +
+        '</div>';
+      }
+      
+      // 완료된 할일
+      if (completedItems.length > 0) {
+        html += '<div>' +
+          '<div class="flex items-center gap-2 mb-3">' +
+            '<span class="bg-gray-400 text-white text-xs font-bold px-3 py-1 rounded-full">완료 ' + completedItems.length + '</span>' +
+          '</div>' +
+          '<div class="space-y-2">' +
+            completedItems.map(function(t) {
+              return '<div class="bg-gray-100 rounded-xl p-4 shadow flex items-center gap-3 opacity-70">' +
+                '<button onclick="toggleTodoComplete(\'' + t.id + '\')" class="w-7 h-7 rounded-full bg-green-500 text-white flex items-center justify-center flex-shrink-0">' +
+                  '<i data-lucide="check" class="w-4 h-4"></i>' +
+                '</button>' +
+                '<div class="flex-1 min-w-0">' +
+                  '<p class="font-medium text-gray-500 line-through truncate">' + escapeHtml(t.title) + '</p>' +
+                '</div>' +
+                '<button onclick="deleteTodo(\'' + t.id + '\')" class="w-8 h-8 rounded-lg text-gray-400 hover:bg-red-100 hover:text-red-500 flex items-center justify-center transition flex-shrink-0">' +
+                  '<i data-lucide="trash-2" class="w-4 h-4"></i>' +
+                '</button>' +
+              '</div>';
+            }).join('') +
+          '</div>' +
+        '</div>';
+      }
+      
+      return html;
+    }
+    
+    // 일정 목록 렌더링
+    function renderScheduleList(keyword) {
+      var items = state.scheduleItems || [];
+      if (keyword) {
+        items = items.filter(function(s) {
+          return (s.title && s.title.toLowerCase().includes(keyword.toLowerCase())) ||
+                 (s.location && s.location.toLowerCase().includes(keyword.toLowerCase()));
+        });
+      }
+      items = items.slice().sort(function(a, b) { 
+        return new Date(a.date + ' ' + (a.time || '00:00')) - new Date(b.date + ' ' + (b.time || '00:00')); 
+      });
+      
+      if (items.length === 0) {
+        return '<div class="text-center py-16">' +
+          '<div class="text-6xl mb-4 opacity-50">📅</div>' +
+          '<p class="text-gray-500 text-lg font-medium">일정이 없습니다</p>' +
+          '<p class="text-gray-400 text-sm mt-1">새로운 일정을 추가해보세요</p>' +
+        '</div>';
+      }
+      
+      // 날짜별 그룹화
+      var grouped = {};
+      items.forEach(function(s) {
+        var date = s.date || '날짜 미정';
+        if (!grouped[date]) grouped[date] = [];
+        grouped[date].push(s);
+      });
+      
+      var today = new Date().toISOString().split('T')[0];
+      
+      return Object.keys(grouped).sort().map(function(date) {
+        var isToday = date === today;
+        var isPast = date < today;
+        var dateLabel = formatScheduleDate(date);
+        
+        return '<div class="mb-4">' +
+          '<div class="flex items-center gap-2 mb-3">' +
+            '<span class="' + (isToday ? 'bg-sky-500 text-white' : (isPast ? 'bg-gray-400 text-white' : 'bg-sky-100 text-sky-700')) + ' text-xs font-bold px-3 py-1.5 rounded-full">' + 
+              (isToday ? '오늘' : dateLabel) +
+            '</span>' +
+          '</div>' +
+          '<div class="space-y-2">' +
+            grouped[date].map(function(s) {
+              return '<div class="bg-white rounded-xl p-4 shadow-md border-l-4 ' + (s.important ? 'border-red-400' : 'border-sky-400') + ' ' + (isPast ? 'opacity-60' : '') + '">' +
+                '<div class="flex justify-between items-start">' +
+                  '<div class="flex-1">' +
+                    '<div class="flex items-center gap-2 mb-1">' +
+                      (s.important ? '<span class="text-red-500 text-sm">⭐</span>' : '') +
+                      '<h4 class="font-bold text-gray-800">' + escapeHtml(s.title) + '</h4>' +
+                    '</div>' +
+                    '<div class="flex flex-wrap items-center gap-3 text-sm text-gray-500">' +
+                      (s.time ? '<span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i>' + s.time + '</span>' : '') +
+                      (s.location ? '<span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i>' + escapeHtml(s.location) + '</span>' : '') +
+                    '</div>' +
+                    (s.memo ? '<p class="text-gray-500 text-sm mt-2">' + escapeHtml(s.memo) + '</p>' : '') +
+                  '</div>' +
+                  '<div class="flex gap-1">' +
+                    '<button onclick="editSchedule(\'' + s.id + '\')" class="w-8 h-8 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center hover:bg-sky-200 transition">' +
+                      '<i data-lucide="edit-2" class="w-4 h-4"></i>' +
+                    '</button>' +
+                    '<button onclick="deleteSchedule(\'' + s.id + '\')" class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200 transition">' +
+                      '<i data-lucide="trash-2" class="w-4 h-4"></i>' +
+                    '</button>' +
+                  '</div>' +
+                '</div>' +
+              '</div>';
+            }).join('') +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+    
+    // 메모 색상 반환
+    function getMemoColor(color) {
+      var colors = {
+        purple: { bg: 'bg-violet-100', border: 'border-violet-400', text: 'text-violet-600' },
+        pink: { bg: 'bg-pink-100', border: 'border-pink-400', text: 'text-pink-600' },
+        blue: { bg: 'bg-blue-100', border: 'border-blue-400', text: 'text-blue-600' },
+        green: { bg: 'bg-green-100', border: 'border-green-400', text: 'text-green-600' },
+        yellow: { bg: 'bg-yellow-100', border: 'border-yellow-400', text: 'text-yellow-600' },
+        orange: { bg: 'bg-orange-100', border: 'border-orange-400', text: 'text-orange-600' }
+      };
+      return colors[color] || colors.purple;
+    }
+    
+    // 메모 날짜 포맷
+    function formatMemoDate(dateStr) {
+      if (!dateStr) return '';
+      var date = new Date(dateStr);
+      var now = new Date();
+      var diff = now - date;
+      var minutes = Math.floor(diff / 60000);
+      var hours = Math.floor(diff / 3600000);
+      var days = Math.floor(diff / 86400000);
+      
+      if (minutes < 1) return '방금 전';
+      if (minutes < 60) return minutes + '분 전';
+      if (hours < 24) return hours + '시간 전';
+      if (days < 7) return days + '일 전';
+      
+      var month = date.getMonth() + 1;
+      var day = date.getDate();
+      return month + '월 ' + day + '일';
+    }
+    
+    // 일정 날짜 포맷
+    function formatScheduleDate(dateStr) {
+      if (!dateStr || dateStr === '날짜 미정') return dateStr;
+      var date = new Date(dateStr);
+      var days = ['일', '월', '화', '수', '목', '금', '토'];
+      var month = date.getMonth() + 1;
+      var day = date.getDate();
+      var dayName = days[date.getDay()];
+      return month + '월 ' + day + '일 (' + dayName + ')';
+    }
+    
+    // HTML 이스케이프
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+    
+    // 메모 추가 폼 열기
+    function openMemoAddForm(category) {
+      state.memoEditingId = null;
+      var html = '';
+      
+      if (category === 'memo') {
+        html = renderMemoFormModal('새 메모 작성', '', '', 'purple', false);
+      } else if (category === 'todo') {
+        html = renderTodoFormModal('새 할일 추가', '', '', 'medium', false);
+      } else if (category === 'schedule') {
+        html = renderScheduleFormModal('새 일정 추가', '', new Date().toISOString().split('T')[0], '', '', '', false, false);
+      }
+      
+      document.getElementById('memo-form-container').innerHTML = html;
+      document.getElementById('memo-form-container').style.display = 'flex';
+      setTimeout(function() { lucide.createIcons(); }, 50);
+    }
+    
+    // 메모 입력 폼 모달
+    function renderMemoFormModal(title, memoTitle, memoContent, memoColor, isEdit) {
+      var colors = ['purple', 'pink', 'blue', 'green', 'yellow', 'orange'];
+      var colorOptions = colors.map(function(c) {
+        var colorClass = {
+          purple: 'bg-violet-400', pink: 'bg-pink-400', blue: 'bg-blue-400',
+          green: 'bg-green-400', yellow: 'bg-yellow-400', orange: 'bg-orange-400'
+        }[c];
+        return '<button type="button" onclick="selectMemoColor(\'' + c + '\')" class="w-10 h-10 rounded-full ' + colorClass + ' ' + (memoColor === c ? 'ring-4 ring-offset-2 ring-gray-400' : '') + ' transition-all hover:scale-110" data-color="' + c + '"></button>';
+      }).join('');
+      
+      return '<div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4" onclick="if(event.target===this)closeMemoForm()">' +
+        '<div class="bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-hidden shadow-2xl">' +
+          '<div class="bg-gradient-to-r from-violet-500 to-purple-600 p-4">' +
+            '<div class="flex justify-between items-center">' +
+              '<h3 class="text-white font-bold text-lg">' + title + '</h3>' +
+              '<button onclick="closeMemoForm()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full w-8 h-8 flex items-center justify-center transition">' +
+                '<i data-lucide="x" class="w-5 h-5"></i>' +
+              '</button>' +
+            '</div>' +
+          '</div>' +
+          '<form onsubmit="saveMemo(event)" class="p-5 space-y-4 overflow-y-auto" style="max-height: calc(90vh - 120px);">' +
+            '<div>' +
+              '<label class="block text-sm font-semibold text-gray-700 mb-2">제목</label>' +
+              '<input type="text" id="memoFormTitle" value="' + escapeHtml(memoTitle) + '" placeholder="메모 제목을 입력하세요" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-violet-400 focus:outline-none transition text-base">' +
+            '</div>' +
+            '<div>' +
+              '<label class="block text-sm font-semibold text-gray-700 mb-2">내용 *</label>' +
+              '<textarea id="memoFormContent" placeholder="메모 내용을 입력하세요..." class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-violet-400 focus:outline-none transition text-base resize-none" rows="6" required>' + escapeHtml(memoContent) + '</textarea>' +
+            '</div>' +
+            '<div>' +
+              '<label class="block text-sm font-semibold text-gray-700 mb-2">색상</label>' +
+              '<div class="flex gap-3" id="memoColorSelector">' +
+                colorOptions +
+              '</div>' +
+              '<input type="hidden" id="memoFormColor" value="' + memoColor + '">' +
+            '</div>' +
+            '<button type="submit" class="w-full py-4 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition">' +
+              (isEdit ? '메모 수정하기' : '메모 저장하기') +
+            '</button>' +
+          '</form>' +
+        '</div>' +
+      '</div>';
+    }
+    
+    // 할일 입력 폼 모달
+    function renderTodoFormModal(title, todoTitle, todoDueDate, todoPriority, isEdit) {
+      var priorities = [
+        { value: 'low', label: '낮음', color: 'bg-green-500' },
+        { value: 'medium', label: '보통', color: 'bg-yellow-500' },
+        { value: 'high', label: '높음', color: 'bg-red-500' }
+      ];
+      var priorityOptions = priorities.map(function(p) {
+        return '<button type="button" onclick="selectTodoPriority(\'' + p.value + '\')" class="flex-1 py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition ' + (todoPriority === p.value ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200') + '" data-priority="' + p.value + '">' +
+          '<span class="w-3 h-3 rounded-full ' + p.color + '"></span>' +
+          '<span class="font-medium">' + p.label + '</span>' +
+        '</button>';
+      }).join('');
+      
+      return '<div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4" onclick="if(event.target===this)closeMemoForm()">' +
+        '<div class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">' +
+          '<div class="bg-gradient-to-r from-pink-500 to-rose-600 p-4">' +
+            '<div class="flex justify-between items-center">' +
+              '<h3 class="text-white font-bold text-lg">' + title + '</h3>' +
+              '<button onclick="closeMemoForm()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full w-8 h-8 flex items-center justify-center transition">' +
+                '<i data-lucide="x" class="w-5 h-5"></i>' +
+              '</button>' +
+            '</div>' +
+          '</div>' +
+          '<form onsubmit="saveTodo(event)" class="p-5 space-y-4">' +
+            '<div>' +
+              '<label class="block text-sm font-semibold text-gray-700 mb-2">할일 내용 *</label>' +
+              '<input type="text" id="todoFormTitle" value="' + escapeHtml(todoTitle) + '" placeholder="무엇을 해야 하나요?" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-pink-400 focus:outline-none transition text-base" required>' +
+            '</div>' +
+            '<div>' +
+              '<label class="block text-sm font-semibold text-gray-700 mb-2">마감일</label>' +
+              '<input type="date" id="todoFormDueDate" value="' + todoDueDate + '" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-pink-400 focus:outline-none transition text-base">' +
+            '</div>' +
+            '<div>' +
+              '<label class="block text-sm font-semibold text-gray-700 mb-2">우선순위</label>' +
+              '<div class="flex gap-2" id="todoPrioritySelector">' +
+                priorityOptions +
+              '</div>' +
+              '<input type="hidden" id="todoFormPriority" value="' + todoPriority + '">' +
+            '</div>' +
+            '<button type="submit" class="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition">' +
+              (isEdit ? '할일 수정하기' : '할일 추가하기') +
+            '</button>' +
+          '</form>' +
+        '</div>' +
+      '</div>';
+    }
+    
+    // 일정 입력 폼 모달
+    function renderScheduleFormModal(title, scheduleTitle, scheduleDate, scheduleTime, scheduleLocation, scheduleMemo, isAllDay, isImportant, isEdit) {
+      return '<div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4" onclick="if(event.target===this)closeMemoForm()">' +
+        '<div class="bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-hidden shadow-2xl">' +
+          '<div class="bg-gradient-to-r from-sky-500 to-blue-600 p-4">' +
+            '<div class="flex justify-between items-center">' +
+              '<h3 class="text-white font-bold text-lg">' + title + '</h3>' +
+              '<button onclick="closeMemoForm()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full w-8 h-8 flex items-center justify-center transition">' +
+                '<i data-lucide="x" class="w-5 h-5"></i>' +
+              '</button>' +
+            '</div>' +
+          '</div>' +
+          '<form onsubmit="saveSchedule(event)" class="p-5 space-y-4 overflow-y-auto" style="max-height: calc(90vh - 120px);">' +
+            '<div>' +
+              '<label class="block text-sm font-semibold text-gray-700 mb-2">일정 제목 *</label>' +
+              '<input type="text" id="scheduleFormTitle" value="' + escapeHtml(scheduleTitle) + '" placeholder="일정 제목을 입력하세요" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-sky-400 focus:outline-none transition text-base" required>' +
+            '</div>' +
+            '<div>' +
+              '<label class="block text-sm font-semibold text-gray-700 mb-2">날짜 *</label>' +
+              '<input type="date" id="scheduleFormDate" value="' + scheduleDate + '" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-sky-400 focus:outline-none transition text-base" required>' +
+            '</div>' +
+            '<div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">' +
+              '<input type="checkbox" id="scheduleFormAllDay" ' + (isAllDay ? 'checked' : '') + ' class="w-5 h-5 accent-sky-500" onchange="toggleScheduleTimeInput()">' +
+              '<label for="scheduleFormAllDay" class="text-sm text-gray-700">하루 종일</label>' +
+            '</div>' +
+            '<div id="scheduleTimeInputContainer" ' + (isAllDay ? 'style="display:none"' : '') + '>' +
+              '<label class="block text-sm font-semibold text-gray-700 mb-2">시간</label>' +
+              '<input type="time" id="scheduleFormTime" value="' + scheduleTime + '" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-sky-400 focus:outline-none transition text-base">' +
+            '</div>' +
+            '<div>' +
+              '<label class="block text-sm font-semibold text-gray-700 mb-2">장소</label>' +
+              '<input type="text" id="scheduleFormLocation" value="' + escapeHtml(scheduleLocation) + '" placeholder="장소를 입력하세요" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-sky-400 focus:outline-none transition text-base">' +
+            '</div>' +
+            '<div>' +
+              '<label class="block text-sm font-semibold text-gray-700 mb-2">메모</label>' +
+              '<textarea id="scheduleFormMemo" placeholder="메모를 입력하세요" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-sky-400 focus:outline-none transition text-base resize-none" rows="3">' + escapeHtml(scheduleMemo) + '</textarea>' +
+            '</div>' +
+            '<div class="flex items-center gap-3 p-3 bg-red-50 rounded-xl">' +
+              '<input type="checkbox" id="scheduleFormImportant" ' + (isImportant ? 'checked' : '') + ' class="w-5 h-5 accent-red-500">' +
+              '<label for="scheduleFormImportant" class="text-sm text-red-600 font-medium">⭐ 중요한 일정</label>' +
+            '</div>' +
+            '<button type="submit" class="w-full py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition">' +
+              (isEdit ? '일정 수정하기' : '일정 추가하기') +
+            '</button>' +
+          '</form>' +
+        '</div>' +
+      '</div>';
+    }
+    
+    // 폼 닫기
+    function closeMemoForm() {
+      document.getElementById('memo-form-container').innerHTML = '';
+      document.getElementById('memo-form-container').style.display = 'none';
+    }
+    
+    // 메모 색상 선택
+    function selectMemoColor(color) {
+      document.getElementById('memoFormColor').value = color;
+      var buttons = document.querySelectorAll('#memoColorSelector button');
+      buttons.forEach(function(btn) {
+        btn.classList.remove('ring-4', 'ring-offset-2', 'ring-gray-400');
+        if (btn.dataset.color === color) {
+          btn.classList.add('ring-4', 'ring-offset-2', 'ring-gray-400');
+        }
+      });
+    }
+    
+    // 할일 우선순위 선택
+    function selectTodoPriority(priority) {
+      document.getElementById('todoFormPriority').value = priority;
+      var buttons = document.querySelectorAll('#todoPrioritySelector button');
+      buttons.forEach(function(btn) {
+        btn.classList.remove('bg-gray-800', 'text-white');
+        btn.classList.add('bg-gray-100', 'text-gray-600');
+        if (btn.dataset.priority === priority) {
+          btn.classList.remove('bg-gray-100', 'text-gray-600');
+          btn.classList.add('bg-gray-800', 'text-white');
+        }
+      });
+    }
+    
+    // 일정 시간 입력 토글
+    function toggleScheduleTimeInput() {
+      var isAllDay = document.getElementById('scheduleFormAllDay').checked;
+      var container = document.getElementById('scheduleTimeInputContainer');
+      container.style.display = isAllDay ? 'none' : 'block';
+    }
+    
+    // 메모 저장
+    function saveMemo(e) {
+      e.preventDefault();
+      var title = document.getElementById('memoFormTitle').value.trim();
+      var content = document.getElementById('memoFormContent').value.trim();
+      var color = document.getElementById('memoFormColor').value;
+      
+      if (!content) {
+        showToast('메모 내용을 입력해주세요', 'error');
+        return;
+      }
+      
+      var now = new Date().toISOString();
+      
+      if (state.memoEditingId) {
+        var memo = state.memoItems.find(function(m) { return m.id === state.memoEditingId; });
+        if (memo) {
+          memo.title = title;
+          memo.content = content;
+          memo.color = color;
+          memo.updatedAt = now;
+        }
+      } else {
+        state.memoItems.push({
+          id: 'memo_' + Date.now(),
+          title: title,
+          content: content,
+          color: color,
+          createdAt: now,
+          updatedAt: now
+        });
+      }
+      
+      saveMemoData();
+      closeMemoForm();
+      state.memoEditingId = null;
+      render();
+      showToast(state.memoEditingId ? '메모가 수정되었습니다' : '메모가 저장되었습니다');
+    }
+    
+    // 할일 저장
+    function saveTodo(e) {
+      e.preventDefault();
+      var title = document.getElementById('todoFormTitle').value.trim();
+      var dueDate = document.getElementById('todoFormDueDate').value;
+      var priority = document.getElementById('todoFormPriority').value;
+      
+      if (!title) {
+        showToast('할일 내용을 입력해주세요', 'error');
+        return;
+      }
+      
+      if (state.memoEditingId) {
+        var todo = state.todoItems.find(function(t) { return t.id === state.memoEditingId; });
+        if (todo) {
+          todo.title = title;
+          todo.dueDate = dueDate;
+          todo.priority = priority;
+        }
+      } else {
+        state.todoItems.push({
+          id: 'todo_' + Date.now(),
+          title: title,
+          dueDate: dueDate,
+          priority: priority,
+          completed: false,
+          createdAt: new Date().toISOString()
+        });
+      }
+      
+      saveMemoData();
+      closeMemoForm();
+      state.memoEditingId = null;
+      render();
+      showToast(state.memoEditingId ? '할일이 수정되었습니다' : '할일이 추가되었습니다');
+    }
+    
+    // 일정 저장
+    function saveSchedule(e) {
+      e.preventDefault();
+      var title = document.getElementById('scheduleFormTitle').value.trim();
+      var date = document.getElementById('scheduleFormDate').value;
+      var isAllDay = document.getElementById('scheduleFormAllDay').checked;
+      var time = isAllDay ? '' : document.getElementById('scheduleFormTime').value;
+      var location = document.getElementById('scheduleFormLocation').value.trim();
+      var memo = document.getElementById('scheduleFormMemo').value.trim();
+      var isImportant = document.getElementById('scheduleFormImportant').checked;
+      
+      if (!title || !date) {
+        showToast('일정 제목과 날짜를 입력해주세요', 'error');
+        return;
+      }
+      
+      if (state.memoEditingId) {
+        var schedule = state.scheduleItems.find(function(s) { return s.id === state.memoEditingId; });
+        if (schedule) {
+          schedule.title = title;
+          schedule.date = date;
+          schedule.time = time;
+          schedule.isAllDay = isAllDay;
+          schedule.location = location;
+          schedule.memo = memo;
+          schedule.important = isImportant;
+        }
+      } else {
+        state.scheduleItems.push({
+          id: 'schedule_' + Date.now(),
+          title: title,
+          date: date,
+          time: time,
+          isAllDay: isAllDay,
+          location: location,
+          memo: memo,
+          important: isImportant,
+          createdAt: new Date().toISOString()
+        });
+      }
+      
+      saveMemoData();
+      closeMemoForm();
+      state.memoEditingId = null;
+      render();
+      showToast(state.memoEditingId ? '일정이 수정되었습니다' : '일정이 추가되었습니다');
+    }
+    
+    // 메모 편집
+    function editMemo(id) {
+      var memo = state.memoItems.find(function(m) { return m.id === id; });
+      if (!memo) return;
+      
+      state.memoEditingId = id;
+      var html = renderMemoFormModal('메모 수정', memo.title || '', memo.content || '', memo.color || 'purple', true);
+      document.getElementById('memo-form-container').innerHTML = html;
+      document.getElementById('memo-form-container').style.display = 'flex';
+      setTimeout(function() { lucide.createIcons(); }, 50);
+    }
+    
+    // 할일 완료 토글
+    function toggleTodoComplete(id) {
+      var todo = state.todoItems.find(function(t) { return t.id === id; });
+      if (todo) {
+        todo.completed = !todo.completed;
+        saveMemoData();
+        render();
+      }
+    }
+    
+    // 일정 편집
+    function editSchedule(id) {
+      var schedule = state.scheduleItems.find(function(s) { return s.id === id; });
+      if (!schedule) return;
+      
+      state.memoEditingId = id;
+      var html = renderScheduleFormModal('일정 수정', schedule.title, schedule.date, schedule.time || '', schedule.location || '', schedule.memo || '', schedule.isAllDay || false, schedule.important || false, true);
+      document.getElementById('memo-form-container').innerHTML = html;
+      document.getElementById('memo-form-container').style.display = 'flex';
+      setTimeout(function() { lucide.createIcons(); }, 50);
+    }
+    
+    // 메모 삭제
+    function deleteMemo(id) {
+      if (!confirm('이 메모를 삭제하시겠습니까?')) return;
+      state.memoItems = state.memoItems.filter(function(m) { return m.id !== id; });
+      saveMemoData();
+      render();
+      showToast('메모가 삭제되었습니다');
+    }
+    
+    // 할일 삭제
+    function deleteTodo(id) {
+      if (!confirm('이 할일을 삭제하시겠습니까?')) return;
+      state.todoItems = state.todoItems.filter(function(t) { return t.id !== id; });
+      saveMemoData();
+      render();
+      showToast('할일이 삭제되었습니다');
+    }
+    
+    // 일정 삭제
+    function deleteSchedule(id) {
+      if (!confirm('이 일정을 삭제하시겠습니까?')) return;
+      state.scheduleItems = state.scheduleItems.filter(function(s) { return s.id !== id; });
+      saveMemoData();
+      render();
+      showToast('일정이 삭제되었습니다');
+    }
+    
+    // 메모 상세보기
+    function viewMemoDetail(id) {
+      var memo = state.memoItems.find(function(m) { return m.id === id; });
+      if (!memo) return;
+      editMemo(id);
+    }
+    
+    // 메모 데이터 저장
+    function saveMemoData() {
+      storage.set('notepadMemos', state.memoItems);
+      storage.set('notepadTodos', state.todoItems);
+      storage.set('notepadSchedules', state.scheduleItems);
+    }
+    
+    // 메모 데이터 로드
+    function loadMemoData() {
+      state.memoItems = storage.get('notepadMemos') || [];
+      state.todoItems = storage.get('notepadTodos') || [];
+      state.scheduleItems = storage.get('notepadSchedules') || [];
     }
 
     // Compound Calculator Modal
